@@ -1,0 +1,127 @@
+/**
+ * 管理画面スタイル
+ *
+ * @package KASHIWAZAKI SEO Universal Sitemap
+ */
+
+.ksus-admin-container {
+    max-width: 1200px;
+    margin-top: 20px;
+}
+
+.ksus-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin-bottom: 20px;
+    padding: 20px;
+}
+
+.ksus-card h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 600;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 10px;
+}
+
+.ksus-card table {
+    margin-top: 15px;
+}
+
+.ksus-card table th {
+    font-weight: 600;
+}
+
+.ksus-card table code {
+    background: #f0f0f1;
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.ksus-card table td {
+    vertical-align: middle;
+}
+
+.ksus-copy-url {
+    margin-left: 5px;
+}
+
+.ksus-card button.button-large {
+    padding: 8px 20px;
+    height: auto;
+    line-height: 1.5;
+}
+
+.ksus-card button .dashicons {
+    margin-right: 5px;
+    vertical-align: middle;
+    margin-top: -2px;
+}
+
+#ksus-regenerate-message {
+    display: none;
+}
+
+#ksus-regenerate-message.success {
+    display: block;
+    color: #46b450;
+    font-weight: 600;
+}
+
+#ksus-regenerate-message.error {
+    display: block;
+    color: #dc3232;
+    font-weight: 600;
+}
+
+.ksus-info {
+    background: #f0f6fc;
+    border-left: 4px solid #0073aa;
+}
+
+.ksus-info p {
+    margin: 0;
+    color: #555;
+}
+
+.ksus-info a {
+    text-decoration: none;
+    color: #0073aa;
+}
+
+.ksus-info a:hover {
+    text-decoration: underline;
+}
+
+/* メタボックススタイル */
+.ksus-meta-box select {
+    margin-top: 5px;
+}
+
+.ksus-meta-box .description {
+    font-style: italic;
+    color: #666;
+}
+
+/* レスポンシブ */
+@media screen and (max-width: 782px) {
+    .ksus-card table {
+        font-size: 14px;
+    }
+
+    .ksus-card table code {
+        font-size: 12px;
+        display: block;
+        margin-top: 5px;
+        word-break: break-all;
+    }
+
+    .ksus-card button.button-small {
+        display: block;
+        margin: 5px 0;
+        width: 100%;
+    }
+}
