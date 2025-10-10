@@ -2,7 +2,7 @@
 /**
  * 管理画面テンプレート
  *
- * @package KASHIWAZAKI SEO Universal Sitemap
+ * @package Kashiwazaki SEO Universal Sitemap
  */
 
 if (!defined('ABSPATH')) {
@@ -14,7 +14,7 @@ $urls = KSUS_Admin::get_sitemap_urls();
 ?>
 
 <div class="wrap">
-    <h1>KASHIWAZAKI SEO Universal Sitemap</h1>
+    <h1>Kashiwazaki SEO Universal Sitemap</h1>
 
     <?php settings_errors('ksus_messages'); ?>
 
@@ -321,7 +321,7 @@ $urls = KSUS_Admin::get_sitemap_urls();
                 <li><strong>サイトマップ設定</strong><br>
                     「サイトマップ設定」で投稿タイプの有効/無効、画像・動画、ニュースサイトマップの設定を行います。</li>
                 <li><strong>個別投稿の除外設定</strong><br>
-                    各投稿の編集画面サイドバーにある「KASHIWAZAKI SEO Universal Sitemap」メタボックスから、個別にサイトマップから除外できます。</li>
+                    各投稿の編集画面サイドバーにある「Kashiwazaki SEO Universal Sitemap」メタボックスから、個別にサイトマップから除外できます。</li>
                 <li><strong>Google Search Consoleに登録</strong><br>
                     インデックスサイトマップURL（<code><?php echo esc_html($urls['index']); ?></code>）をGoogle Search Consoleに登録してください。</li>
             </ol>
@@ -334,7 +334,7 @@ $urls = KSUS_Admin::get_sitemap_urls();
         <!-- プラグイン情報 -->
         <div class="ksus-card ksus-info">
             <p>
-                <strong>KASHIWAZAKI SEO Universal Sitemap</strong> Version <?php echo esc_html(KSUS_VERSION); ?><br>
+                <strong>Kashiwazaki SEO Universal Sitemap</strong> Version <?php echo esc_html(KSUS_VERSION); ?><br>
                 Author: 柏崎剛 (Tsuyoshi Kashiwazaki) |
                 <a href="https://www.tsuyoshikashiwazaki.jp/profile/" target="_blank">プロフィール</a> |
                 <a href="https://www.tsuyoshikashiwazaki.jp" target="_blank">ウェブサイト</a>

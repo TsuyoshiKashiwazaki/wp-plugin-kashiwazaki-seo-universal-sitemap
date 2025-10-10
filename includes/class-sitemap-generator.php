@@ -2,7 +2,7 @@
 /**
  * サイトマップ生成クラス
  *
- * @package KASHIWAZAKI SEO Universal Sitemap
+ * @package Kashiwazaki SEO Universal Sitemap
  */
 
 if (!defined('ABSPATH')) {
@@ -274,25 +274,55 @@ class KSUS_Sitemap_Generator {
             $thumbnail_id = get_post_thumbnail_id($post->ID);
             $image_url = wp_get_attachment_image_url($thumbnail_id, 'full');
             if ($image_url) {
+                $alt_text = get_post_meta($thumbnail_id, '_wp_attachment_image_alt', true);
+                $title_text = $alt_text !== '' ? $alt_text : get_the_title($thumbnail_id);
                 $images[] = array(
                     'loc' => $image_url,
-                    'title' => get_the_title($thumbnail_id),
-                    'caption' => wp_get_attachment_caption($thumbnail_id)
+                    'title' => $title_text,
+                    'caption' => wp_strip_all_tags(wp_get_attachment_caption($thumbnail_id))
                 );
                 $seen_urls[$image_url] = true;
             }
         }
 
         // 本文中の画像
-        preg_match_all('/<img[^>]+src=["\']([^"\']+)["\'][^>]*>/i', $post->post_content, $matches);
-        if (!empty($matches[1])) {
-            foreach ($matches[1] as $img_url) {
+        preg_match_all('/<img[^>]+>/i', $post->post_content, $img_tags);
+        if (!empty($img_tags[0])) {
+            foreach ($img_tags[0] as $img_tag) {
+                if (!preg_match('/src=["\']([^"\']+)["\']/', $img_tag, $src_match)) {
+                    continue;
+                }
+
+                $img_url = $src_match[1];
                 // 重複チェック
                 if (!isset($seen_urls[$img_url])) {
+                    $title_text = '';
+                    $caption_text = '';
+
+                    $attachment_id = attachment_url_to_postid($img_url);
+                    if ($attachment_id) {
+                        $alt_text = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
+                        if ($alt_text !== '') {
+                            $title_text = $alt_text;
+                        } else {
+                            $title_text = get_the_title($attachment_id);
+                        }
+                        $caption_text = wp_strip_all_tags(wp_get_attachment_caption($attachment_id));
+                    } else {
+                        if (preg_match('/alt=["\']([^"\']*)["\']/', $img_tag, $alt_match)) {
+                            $title_text = $alt_match[1];
+                        } elseif (preg_match('/title=["\']([^"\']*)["\']/', $img_tag, $title_match)) {
+                            $title_text = $title_match[1];
+                        } else {
+                            $path = parse_url($img_url, PHP_URL_PATH);
+                            $title_text = $path ? wp_basename($path) : '';
+                        }
+                    }
+
                     $images[] = array(
                         'loc' => $img_url,
-                        'title' => '',
-                        'caption' => ''
+                        'title' => $title_text,
+                        'caption' => $caption_text
                     );
                     $seen_urls[$img_url] = true;
                 }
@@ -303,14 +333,27 @@ class KSUS_Sitemap_Generator {
         foreach ($images as $image) {
             $xml .= "\t\t<image:image>\n";
             $xml .= "\t\t\t<image:loc>" . esc_url($image['loc']) . "</image:loc>\n";
-            if (!empty($image['title'])) {
-                $title = htmlspecialchars(html_entity_decode($image['title'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_XML1, 'UTF-8');
-                $xml .= "\t\t\t<image:title>" . $title . "</image:title>\n";
+
+            // title: HTMLデコード→トリミング→空文字列チェック→XMLエスケープ
+            if (isset($image['title']) && $image['title'] !== '') {
+                $title = html_entity_decode($image['title'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $title = trim($title);
+                if ($title !== '') {
+                    $title = htmlspecialchars($title, ENT_XML1, 'UTF-8');
+                    $xml .= "\t\t\t<image:title>" . $title . "</image:title>\n";
+                }
             }
-            if (!empty($image['caption'])) {
-                $caption = htmlspecialchars(html_entity_decode($image['caption'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_XML1, 'UTF-8');
-                $xml .= "\t\t\t<image:caption>" . $caption . "</image:caption>\n";
+
+            // caption: HTMLデコード→トリミング→空文字列チェック→XMLエスケープ
+            if (isset($image['caption']) && $image['caption'] !== '') {
+                $caption = html_entity_decode($image['caption'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $caption = trim($caption);
+                if ($caption !== '') {
+                    $caption = htmlspecialchars($caption, ENT_XML1, 'UTF-8');
+                    $xml .= "\t\t\t<image:caption>" . $caption . "</image:caption>\n";
+                }
             }
+
             $xml .= "\t\t</image:image>\n";
         }
 

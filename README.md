@@ -1,11 +1,11 @@
-# 🚀 KASHIWAZAKI SEO Universal Sitemap
+# 🚀 Kashiwazaki SEO Universal Sitemap
 
 [![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/License-GPL--2.0--or--later-green.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
-[![Version](https://img.shields.io/badge/Version-1.0.0-orange.svg)](https://github.com/TsuyoshiKashiwazaki/wp-plugin-kashiwazaki-seo-universal-sitemap/releases)
+[![Version](https://img.shields.io/badge/Version-1.0.1--dev-orange.svg)](https://github.com/TsuyoshiKashiwazaki/wp-plugin-kashiwazaki-seo-universal-sitemap/releases)
 
-投稿タイプ別のXMLサイトマップを生成し、ニュース・画像・動画サイトマップにも対応したSEO最適化プラグインです。
+投稿タイプ別のXMLサイトマップを生成し、ニュースサイトマップ、画像・動画情報の埋め込みにも対応したSEO最適化プラグインです。
 
 > 🎯 **検索エンジン最適化のための包括的なサイトマップソリューション**
 
@@ -13,8 +13,8 @@
 
 - ✅ **投稿タイプ別サイトマップ生成** - 投稿、固定ページ、カスタム投稿タイプに対応
 - 📰 **ニュースサイトマップ** - Google Newsに最適化されたサイトマップ
-- 🖼️ **画像サイトマップ** - 画像検索最適化のための画像情報を含むサイトマップ
-- 🎬 **動画サイトマップ** - 動画コンテンツを検索エンジンに最適化
+- 🖼️ **画像情報の埋め込み** - 画像検索最適化のための画像情報を投稿タイプ別サイトマップに埋め込み
+- 🎬 **動画情報の埋め込み** - YouTube・Vimeoの動画情報を投稿タイプ別サイトマップに埋め込み
 - ⚙️ **柔軟な設定** - 各投稿タイプごとに細かく設定可能
 - 🔄 **自動更新** - コンテンツ更新時に自動的にサイトマップを再生成
 - 📊 **投稿レベルのコントロール** - 個別の投稿でサイトマップへの含有を制御可能
@@ -25,24 +25,25 @@
 
 1. プラグインファイルを `/wp-content/plugins/kashiwazaki-seo-universal-sitemap/` ディレクトリにアップロード
 2. WordPress管理画面の「プラグイン」メニューからプラグインを有効化
-3. 「設定」→「KASHIWAZAKI SEO Universal Sitemap」から設定を行う
+3. 「設定」→「Kashiwazaki SEO Universal Sitemap」から設定を行う
 
 ### 基本設定
 
 1. 管理画面でサイトマップに含める投稿タイプを選択
 2. 各投稿タイプの優先度と更新頻度を設定
-3. 必要に応じてニュース・画像・動画サイトマップを有効化
+3. 必要に応じてニュースサイトマップ、画像・動画情報の埋め込みを有効化
 4. 設定を保存してサイトマップを生成
 
 ### サイトマップURL
 
 生成されたサイトマップは以下のURLでアクセスできます：
 
-- インデックスサイトマップ: `https://yourdomain.com/sitemap.xml`
-- 投稿タイプ別: `https://yourdomain.com/sitemap-{post_type}.xml`
-- ニュースサイトマップ: `https://yourdomain.com/sitemap-news.xml`
-- 画像サイトマップ: `https://yourdomain.com/sitemap-image.xml`
-- 動画サイトマップ: `https://yourdomain.com/sitemap-video.xml`
+- **インデックスサイトマップ**: `https://yourdomain.com/sitemap.xml`
+- **投稿タイプ別サイトマップ**: `https://yourdomain.com/sitemap-{post_type}.xml`
+  （例: `sitemap-post.xml`、`sitemap-page.xml`）
+  ※ 画像・動画情報は投稿タイプ別サイトマップ内に含まれます
+- **ニュースサイトマップ**: `https://yourdomain.com/sitemap-googlenews.xml`
+  （設定で有効化した投稿タイプのニュース記事が含まれます）
 
 ## 使い方
 
@@ -55,15 +56,15 @@
 
 ### ニュースサイトマップ
 
-Google News向けに最適化されたサイトマップを生成します。過去48時間以内の記事が自動的に含まれます。
+Google News向けに最適化されたサイトマップを生成します。設定で有効化した投稿タイプの記事が含まれます。
 
-### 画像サイトマップ
+### 画像情報の埋め込み
 
-投稿に含まれる画像を自動的に検出し、画像検索最適化のためのサイトマップを生成します。
+投稿に含まれる画像（アイキャッチ画像、本文中の画像）を自動的に検出し、投稿タイプ別サイトマップ内に `<image:image>` タグとして埋め込みます。画像検索の最適化に役立ちます。
 
-### 動画サイトマップ
+### 動画情報の埋め込み
 
-動画コンテンツの情報を含むサイトマップを生成し、動画検索結果への表示を最適化します。
+YouTube・Vimeoの動画コンテンツを自動検出し、投稿タイプ別サイトマップ内に `<video:video>` タグとして埋め込みます。動画検索結果への表示を最適化します。
 
 ## 技術仕様
 
@@ -89,11 +90,18 @@ Google News向けに最適化されたサイトマップを生成します。過
 
 最新の変更内容については [CHANGELOG.md](CHANGELOG.md) をご覧ください。
 
+### v1.0.1 (2025-10-09)
+
+- 画像情報のメタデータ取得ロジックを改善
+- alt/title/caption の優先順位を最適化
+- HTMLタグ除去とトリミング処理を強化
+- 空文字列チェックをより厳密に変更
+
 ### v1.0.0 (2025-10-08)
 
 - 初回リリース
 - 投稿タイプ別サイトマップ生成機能
-- ニュース・画像・動画サイトマップ対応
+- ニュースサイトマップ、画像・動画情報の埋め込みに対応
 - 個別投稿レベルでの制御機能
 
 ## ライセンス

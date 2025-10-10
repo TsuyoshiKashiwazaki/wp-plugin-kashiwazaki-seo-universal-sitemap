@@ -2,7 +2,7 @@
 /**
  * 管理画面クラス
  *
- * @package KASHIWAZAKI SEO Universal Sitemap
+ * @package Kashiwazaki SEO Universal Sitemap
  */
 
 if (!defined('ABSPATH')) {
@@ -37,8 +37,8 @@ class KSUS_Admin {
      */
     public function add_admin_menu() {
         add_menu_page(
-            'KASHIWAZAKI SEO Universal Sitemap',
-            'KASHIWAZAKI SEO Universal Sitemap',
+            'Kashiwazaki SEO Universal Sitemap',
+            'Kashiwazaki SEO Universal Sitemap',
             'manage_options',
             'kashiwazaki-seo-universal-sitemap',
             array($this, 'render_admin_page'),
@@ -219,8 +219,6 @@ class KSUS_Admin {
         }
 
         $urls['googlenews'] = $home_url . 'sitemap-googlenews.xml';
-        $urls['image'] = $home_url . 'sitemap-image.xml';
-        $urls['video'] = $home_url . 'sitemap-video.xml';
 
         return $urls;
     }

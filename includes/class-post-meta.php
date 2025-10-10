@@ -2,7 +2,7 @@
 /**
  * 投稿メタボックス管理クラス
  *
- * @package KASHIWAZAKI SEO Universal Sitemap
+ * @package Kashiwazaki SEO Universal Sitemap
  */
 
 if (!defined('ABSPATH')) {
@@ -33,7 +33,7 @@ class KSUS_Post_Meta {
         foreach ($post_types as $post_type) {
             add_meta_box(
                 'ksus_sitemap_settings',
-                'KASHIWAZAKI SEO Universal Sitemap',
+                'Kashiwazaki SEO Universal Sitemap',
                 array($this, 'render_meta_box'),
                 $post_type,
                 'side',

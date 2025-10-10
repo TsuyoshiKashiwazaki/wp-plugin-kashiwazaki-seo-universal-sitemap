@@ -1,7 +1,7 @@
 /**
  * 管理画面JavaScript
  *
- * @package KASHIWAZAKI SEO Universal Sitemap
+ * @package Kashiwazaki SEO Universal Sitemap
  */
 
 (function($) {
