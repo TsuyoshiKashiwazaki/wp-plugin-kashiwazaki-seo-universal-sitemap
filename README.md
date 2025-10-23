@@ -1,25 +1,25 @@
-# 🚀 Kashiwazaki SEO Universal Sitemap
+# Kashiwazaki SEO Universal Sitemap
 
 [![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/License-GPL--2.0--or--later-green.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
-[![Version](https://img.shields.io/badge/Version-1.0.1--dev-orange.svg)](https://github.com/TsuyoshiKashiwazaki/wp-plugin-kashiwazaki-seo-universal-sitemap/releases)
+[![Version](https://img.shields.io/badge/Version-1.0.2--dev-orange.svg)](https://github.com/TsuyoshiKashiwazaki/wp-plugin-kashiwazaki-seo-universal-sitemap/releases)
 
 投稿タイプ別のXMLサイトマップを生成し、ニュースサイトマップ、画像・動画情報の埋め込みにも対応したSEO最適化プラグインです。
 
-> 🎯 **検索エンジン最適化のための包括的なサイトマップソリューション**
+> **検索エンジン最適化のための包括的なサイトマップソリューション**
 
 ## 主な機能
 
-- ✅ **投稿タイプ別サイトマップ生成** - 投稿、固定ページ、カスタム投稿タイプに対応
-- 📰 **ニュースサイトマップ** - Google Newsに最適化されたサイトマップ
-- 🖼️ **画像情報の埋め込み** - 画像検索最適化のための画像情報を投稿タイプ別サイトマップに埋め込み
-- 🎬 **動画情報の埋め込み** - YouTube・Vimeoの動画情報を投稿タイプ別サイトマップに埋め込み
-- ⚙️ **柔軟な設定** - 各投稿タイプごとに細かく設定可能
-- 🔄 **自動更新** - コンテンツ更新時に自動的にサイトマップを再生成
-- 📊 **投稿レベルのコントロール** - 個別の投稿でサイトマップへの含有を制御可能
+- **投稿タイプ別サイトマップ生成** - 投稿、固定ページ、カスタム投稿タイプに対応
+- **ニュースサイトマップ** - Google Newsに最適化されたサイトマップ
+- **画像情報の埋め込み** - 画像検索最適化のための画像情報を投稿タイプ別サイトマップに埋め込み
+- **動画情報の埋め込み** - YouTube・Vimeoの動画情報を投稿タイプ別サイトマップに埋め込み
+- **柔軟な設定** - 各投稿タイプごとに細かく設定可能
+- **自動更新** - コンテンツ更新時に自動的にサイトマップを再生成
+- **投稿レベルのコントロール** - 個別の投稿でサイトマップへの含有を制御可能
 
-## 🚀 クイックスタート
+## クイックスタート
 
 ### インストール
 
@@ -90,6 +90,11 @@ YouTube・Vimeoの動画コンテンツを自動検出し、投稿タイプ別�
 
 最新の変更内容については [CHANGELOG.md](CHANGELOG.md) をご覧ください。
 
+### v1.0.2 (2025-10-23)
+
+- カスタム投稿タイプのサイトマップがインデックスに正しく含まれるように修正
+- サイトマップ生成順序を最適化
+
 ### v1.0.1 (2025-10-09)
 
 - 画像情報のメタデータ取得ロジックを改善
@@ -114,11 +119,11 @@ GPL-2.0-or-later
 **ウェブサイト**: https://www.tsuyoshikashiwazaki.jp/
 **サポート**: プラグインに関するご質問や不具合報告は、開発者ウェブサイトまでお問い合わせください。
 
-## 🤝 貢献
+## 貢献
 
 プルリクエストを歓迎します。大きな変更の場合は、まずissueを開いて変更内容について議論してください。
 
-## 📞 サポート
+## サポート
 
 - 不具合報告: [GitHub Issues](https://github.com/TsuyoshiKashiwazaki/wp-plugin-kashiwazaki-seo-universal-sitemap/issues)
 - 機能リクエスト: [GitHub Issues](https://github.com/TsuyoshiKashiwazaki/wp-plugin-kashiwazaki-seo-universal-sitemap/issues)
@@ -128,8 +133,8 @@ GPL-2.0-or-later
 
 <div align="center">
 
-**🔍 Keywords**: WordPress, SEO, Sitemap, XML Sitemap, Google News, Image Sitemap, Video Sitemap, Search Engine Optimization
+**Keywords**: WordPress, SEO, Sitemap, XML Sitemap, Google News, Image Sitemap, Video Sitemap, Search Engine Optimization
 
-Made with ❤️ by [Tsuyoshi Kashiwazaki](https://github.com/TsuyoshiKashiwazaki)
+Made by [Tsuyoshi Kashiwazaki](https://github.com/TsuyoshiKashiwazaki)
 
 </div>

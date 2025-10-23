@@ -4,7 +4,7 @@ Tags: seo, sitemap, xml sitemap, google news, image sitemap, video sitemap
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -72,6 +72,11 @@ Kashiwazaki SEO Universal Sitemapは、WordPress向けの包括的なサイト�
 
 == Changelog ==
 
+= 1.0.2 =
+* Fixed: カスタム投稿タイプのサイトマップがインデックスに含まれない問題を修正
+* Fixed: サイトマップ生成順序を変更（投稿タイプ別・ニュース → インデックス）
+* Improved: すべてのカスタム投稿タイプが正しくインデックスサイトマップに反映されるように改善
+
 = 1.0.1 =
 * Improved: 画像情報のメタデータ取得ロジックを改善
 * Improved: alt/title/caption の優先順位を最適化
@@ -88,6 +93,9 @@ Kashiwazaki SEO Universal Sitemapは、WordPress向けの包括的なサイト�
 * 個別投稿でのサイトマップ含有制御機能
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+カスタム投稿タイプのサイトマップが正しくインデックスに反映されるようになりました。カスタム投稿タイプを使用している場合は必ずアップデートしてください。
 
 = 1.0.1 =
 画像情報のメタデータ処理が改善されました。より正確な画像情報が検索エンジンに提供されます。

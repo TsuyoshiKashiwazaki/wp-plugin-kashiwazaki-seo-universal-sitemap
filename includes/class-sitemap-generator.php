@@ -33,9 +33,9 @@ class KSUS_Sitemap_Generator {
      * すべてのサイトマップを生成
      */
     public function generate_all_sitemaps() {
-        $this->generate_index_sitemap();
         $this->generate_post_type_sitemaps();
         $this->generate_news_sitemap();
+        $this->generate_index_sitemap();
     }
 
     /**

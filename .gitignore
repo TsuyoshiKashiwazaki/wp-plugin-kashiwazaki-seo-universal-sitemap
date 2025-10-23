@@ -2,6 +2,8 @@
 gh_*/
 *.tar.gz
 *.zip
+wp
+wp-cli.phar
 
 # 一時ファイル
 *.tmp
@@ -19,3 +21,5 @@ Thumbs.db
 
 # Claude
 .claude/
+wp
+wp-cli.phar
