@@ -1,25 +1,35 @@
-# 開発ツール
-gh_*/
-*.tar.gz
-*.zip
-wp
-wp-cli.phar
-
-# 一時ファイル
-*.tmp
-*.temp
-*.log
-*.cache
-
-# OS固有
+# WordPress
 .DS_Store
 Thumbs.db
 
-# IDE
+# Editor
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# Claude
+# Node
+node_modules/
+package-lock.json
+
+# Logs
+*.log
+debug.log
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Test files
+test-*.php
+test-*.js
+*.test.php
+AGENTS.md
 .claude/
-wp
-wp-cli.phar

@@ -18,7 +18,16 @@ $urls = KSUS_Admin::get_sitemap_urls();
 
     <?php settings_errors('ksus_messages'); ?>
 
+    <!-- タブナビゲーション -->
+    <h2 class="nav-tab-wrapper">
+        <a href="#tab-main" class="nav-tab nav-tab-active" data-tab="main">サイトマップ &amp; 設定</a>
+        <a href="#tab-stats" class="nav-tab" data-tab="stats">統計情報</a>
+        <a href="#tab-usage" class="nav-tab" data-tab="usage">使い方</a>
+    </h2>
+
     <div class="ksus-admin-container">
+        <!-- メインタブ -->
+        <div id="tab-main" class="ksus-tab-content" style="display: block;">
         <!-- サイトマップURL -->
         <div class="ksus-card">
             <h2>サイトマップURL</h2>
@@ -37,34 +46,39 @@ $urls = KSUS_Admin::get_sitemap_urls();
                     $upload_dir = wp_upload_dir();
                     $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
 
-                    // インデックス
-                    $index_exists = file_exists($sitemap_dir . 'sitemap.xml');
+                    // インデックス（.xml と .xml.gz 両方チェック）
+                    $index_exists = file_exists($sitemap_dir . 'sitemap.xml.gz') || file_exists($sitemap_dir . 'sitemap.xml');
                     ?>
                     <tr>
                         <td><strong>インデックス</strong></td>
                         <td>
-                            <code style="font-size: 12px;"><?php echo esc_html($urls['index']); ?></code>
-                            <button type="button" class="ksus-copy-url" data-url="<?php echo esc_attr($urls['index']); ?>" style="border: none; background: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px; vertical-align: middle; opacity: 0.6;" title="コピー">📋</button>
+                            <?php if ($index_exists): ?>
+                                <code style="font-size: 12px;"><?php echo esc_html($urls['index']['url']); ?></code>
+                                <button type="button" class="ksus-copy-url" data-url="<?php echo esc_attr($urls['index']['url']); ?>" style="border: none; background: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px; vertical-align: middle; opacity: 0.6;" title="コピー">📋</button>
+                            <?php else: ?>
+                                <code style="font-size: 12px; color: #999;">-</code>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <?php if ($index_exists):
-                                $count = KSUS_Admin::get_sitemap_url_count('sitemap.xml');
+                                // 実際に存在するファイル名を取得
+                                $index_filename = file_exists($sitemap_dir . 'sitemap.xml.gz') ? 'sitemap.xml.gz' : 'sitemap.xml';
+                                $count = KSUS_Admin::get_sitemap_url_count($index_filename);
                             ?>
-                                <span style="color: #46b450;">✓ 生成済み (<?php echo $count; ?>件)</span>
+                                <span style="color: #46b450;">✓ 生成済み (<?php echo number_format($count); ?>件)</span>
                             <?php else: ?>
                                 <span style="color: #dc3232;">✗ 未生成</span>
                             <?php endif; ?>
                         </td>
                         <td>
                             <?php if ($index_exists): ?>
-                                <a href="<?php echo esc_url($urls['index']); ?>" target="_blank" class="button button-small">表示</a>
+                                <a href="<?php echo esc_url($urls['index']['url']); ?>" target="_blank" class="button button-small">表示</a>
                             <?php else: ?>
                                 <span style="color: #999;">表示不可</span>
                             <?php endif; ?>
                         </td>
                     </tr>
                     <?php foreach ($stats as $post_type => $stat):
-                        $file_exists = file_exists($sitemap_dir . 'sitemap-' . $post_type . '.xml');
                         $enabled_post_types = get_option('ksus_enabled_post_types', false);
                         if ($enabled_post_types === false) {
                             $post_types_list = get_post_types(array('public' => true), 'names');
@@ -72,18 +86,36 @@ $urls = KSUS_Admin::get_sitemap_urls();
                             $enabled_post_types = $post_types_list;
                         }
                         $is_enabled = in_array($post_type, $enabled_post_types);
+
+                        // 分割ファイル情報を取得
+                        $split_stats = KSUS_Admin::get_split_sitemap_stats($post_type);
+                        $has_files = $split_stats['file_count'] > 0;
                     ?>
                     <tr>
                         <td><?php echo esc_html($stat['label']); ?></td>
                         <td>
-                            <code style="font-size: 12px;"><?php echo esc_html($urls[$post_type]); ?></code>
-                            <button type="button" class="ksus-copy-url" data-url="<?php echo esc_attr($urls[$post_type]); ?>" style="border: none; background: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px; vertical-align: middle; opacity: 0.6;" title="コピー">📋</button>
+                            <?php if ($has_files && isset($urls[$post_type])): ?>
+                                <code style="font-size: 12px;"><?php echo esc_html($urls[$post_type]['url']); ?></code>
+                                <button type="button" class="ksus-copy-url" data-url="<?php echo esc_attr($urls[$post_type]['url']); ?>" style="border: none; background: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px; vertical-align: middle; opacity: 0.6;" title="コピー">📋</button>
+                                <?php if ($split_stats['file_count'] > 1 && isset($urls[$post_type]['files'])): ?>
+                                    <br><small style="color: #666; margin-left: 5px;">
+                                        <?php
+                                        foreach ($split_stats['files'] as $index => $file_info):
+                                            if ($index > 0) echo ', ';
+                                            if (isset($urls[$post_type]['files'][$index])) {
+                                                echo '<a href="' . esc_url($urls[$post_type]['files'][$index]) . '" target="_blank" style="text-decoration: none;" title="' . esc_attr($file_info['filename']) . '">#' . ($index + 1) . ' (' . number_format($file_info['url_count']) . '件)</a>';
+                                            }
+                                        endforeach;
+                                        ?>
+                                    </small>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <code style="font-size: 12px; color: #999;">-</code>
+                            <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($file_exists):
-                                $count = KSUS_Admin::get_sitemap_url_count('sitemap-' . $post_type . '.xml');
-                            ?>
-                                <span style="color: #46b450;">✓ 生成済み (<?php echo $count; ?>件)</span>
+                            <?php if ($has_files): ?>
+                                <span style="color: #46b450;">✓ 生成済み (<?php echo number_format($split_stats['total_urls']); ?>件<?php if ($split_stats['file_count'] > 1): echo ' / ' . $split_stats['file_count'] . 'ファイル'; endif; ?>)</span>
                             <?php elseif ($is_enabled && $stat['total'] == 0): ?>
                                 <span style="color: #999;">対象が見つかりません</span>
                             <?php elseif (!$is_enabled): ?>
@@ -93,33 +125,54 @@ $urls = KSUS_Admin::get_sitemap_urls();
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($file_exists): ?>
-                                <a href="<?php echo esc_url($urls[$post_type]); ?>" target="_blank" class="button button-small">表示</a>
+                            <?php if ($has_files && isset($urls[$post_type])): ?>
+                                <a href="<?php echo esc_url($urls[$post_type]['url']); ?>" target="_blank" class="button button-small">表示</a>
                             <?php else: ?>
                                 <span style="color: #999;">表示不可</span>
                             <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>
+
+                    <!-- Google News 特別枠 -->
+                    <tr style="background: #f9f9f9;">
+                        <td colspan="4" style="padding: 8px 10px; border-top: 2px solid #0073aa; border-bottom: 1px solid #ddd;">
+                            <strong style="color: #0073aa; font-size: 13px;">📰 Googleニュースサイトマップ</strong>
+                            <small style="color: #666; margin-left: 10px;">（Google News専用）</small>
+                        </td>
+                    </tr>
                     <?php
-                    $googlenews_file = $sitemap_dir . 'sitemap-googlenews.xml';
-                    $googlenews_exists = file_exists($googlenews_file);
                     $news_post_types = get_option('ksus_news_post_types', array());
 
-                    // デバッグ用（本番環境では削除してください）
-                    // error_log("Google News Sitemap Debug - File: {$googlenews_file}, Exists: " . ($googlenews_exists ? 'YES' : 'NO') . ", News Types: " . print_r($news_post_types, true));
+                    // 分割ファイル情報を取得
+                    $news_split_stats = KSUS_Admin::get_split_sitemap_stats('googlenews');
+                    $news_has_files = $news_split_stats['file_count'] > 0;
                     ?>
-                    <tr>
-                        <td><strong>Google News</strong></td>
+                    <tr style="background: #f0f8ff;">
+                        <td style="padding-left: 20px;"><strong>Google News</strong></td>
                         <td>
-                            <code style="font-size: 12px;"><?php echo esc_html($urls['googlenews']); ?></code>
-                            <button type="button" class="ksus-copy-url" data-url="<?php echo esc_attr($urls['googlenews']); ?>" style="border: none; background: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px; vertical-align: middle; opacity: 0.6;" title="コピー">📋</button>
+                            <?php if ($news_has_files && isset($urls['googlenews'])): ?>
+                                <code style="font-size: 12px;"><?php echo esc_html($urls['googlenews']['url']); ?></code>
+                                <button type="button" class="ksus-copy-url" data-url="<?php echo esc_attr($urls['googlenews']['url']); ?>" style="border: none; background: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px; vertical-align: middle; opacity: 0.6;" title="コピー">📋</button>
+                                <?php if ($news_split_stats['file_count'] > 1 && isset($urls['googlenews']['files'])): ?>
+                                    <br><small style="color: #666; margin-left: 5px;">
+                                        <?php
+                                        foreach ($news_split_stats['files'] as $index => $file_info):
+                                            if ($index > 0) echo ', ';
+                                            if (isset($urls['googlenews']['files'][$index])) {
+                                                echo '<a href="' . esc_url($urls['googlenews']['files'][$index]) . '" target="_blank" style="text-decoration: none;" title="' . esc_attr($file_info['filename']) . '">#' . ($index + 1) . ' (' . number_format($file_info['url_count']) . '件)</a>';
+                                            }
+                                        endforeach;
+                                        ?>
+                                    </small>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <code style="font-size: 12px; color: #999;">-</code>
+                            <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($googlenews_exists):
-                                $count = KSUS_Admin::get_sitemap_url_count('sitemap-googlenews.xml');
-                            ?>
-                                <span style="color: #46b450;">✓ 生成済み (<?php echo $count; ?>件)</span>
+                            <?php if ($news_has_files): ?>
+                                <span style="color: #46b450;">✓ 生成済み (<?php echo number_format($news_split_stats['total_urls']); ?>件<?php if ($news_split_stats['file_count'] > 1): echo ' / ' . $news_split_stats['file_count'] . 'ファイル'; endif; ?>)</span>
                             <?php elseif (empty($news_post_types)): ?>
                                 <span style="color: #999;">無効</span>
                             <?php else: ?>
@@ -127,8 +180,8 @@ $urls = KSUS_Admin::get_sitemap_urls();
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($googlenews_exists): ?>
-                                <a href="<?php echo esc_url($urls['googlenews']); ?>" target="_blank" class="button button-small">表示</a>
+                            <?php if ($news_has_files && isset($urls['googlenews'])): ?>
+                                <a href="<?php echo esc_url($urls['googlenews']['url']); ?>" target="_blank" class="button button-small">表示</a>
                             <?php else: ?>
                                 <span style="color: #999;">表示不可</span>
                             <?php endif; ?>
@@ -241,10 +294,47 @@ $urls = KSUS_Admin::get_sitemap_urls();
                                 </label>
                             </td>
                         </tr>
+                        <tr>
+                            <td><strong>GZIP圧縮</strong></td>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="ksus_enable_gzip" value="1" <?php checked(get_option('ksus_enable_gzip', false)); ?>>
+                                    サイトマップファイルをGZIP圧縮する (.xml.gz)
+                                </label>
+                                <p style="margin: 5px 0 0 25px; color: #666; font-size: 12px;">
+                                    ファイルサイズを大幅に削減できます（推奨）。Googlebot対応。
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>HTMLヘッダー出力</strong></td>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="ksus_enable_head_link" value="1" <?php checked(get_option('ksus_enable_head_link', true)); ?>>
+                                    &lt;head&gt;に&lt;link rel="sitemap"&gt;を追加
+                                </label>
+                                <p style="margin: 5px 0 0 25px; color: #666; font-size: 12px;">
+                                    検索エンジンがサイトマップを発見しやすくなります（推奨）。
+                                </p>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
 
-                <h3 style="margin-top: 30px;">ニュースサイトマップ - 投稿タイプ</h3>
+                <?php
+                $news_post_types = get_option('ksus_news_post_types', array());
+                $has_news_enabled = !empty($news_post_types);
+                $collapsed_class = $has_news_enabled ? '' : 'collapsed';
+                $content_style = $has_news_enabled ? '' : 'style="display: none;"';
+                ?>
+                <h3 style="margin-top: 30px; cursor: pointer; user-select: none;" class="ksus-collapsible-toggle <?php echo $collapsed_class; ?>">
+                    <span class="dashicons dashicons-arrow-down-alt2" style="margin-top: 2px;"></span>
+                    ニュースサイトマップ - 投稿タイプ
+                    <?php if (!$has_news_enabled): ?>
+                        <small style="color: #999; font-weight: normal; margin-left: 10px;">（クリックして設定）</small>
+                    <?php endif; ?>
+                </h3>
+                <div class="ksus-collapsible-content" <?php echo $content_style; ?>>
                 <p style="margin-top: 0; color: #666;">Googleニュースに掲載する投稿タイプを選択</p>
                 <input type="hidden" name="ksus_news_post_types[]" value="">
                 <table class="widefat striped">
@@ -275,14 +365,15 @@ $urls = KSUS_Admin::get_sitemap_urls();
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div><!-- .ksus-collapsible-content -->
 
                 <?php submit_button('設定を保存'); ?>
             </div>
         </form>
+        </div><!-- #tab-main -->
 
-        <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-
-        <!-- 統計情報 -->
+        <!-- 統計情報タブ -->
+        <div id="tab-stats" class="ksus-tab-content" style="display: none;">
         <div class="ksus-card">
             <h2>サイトマップ統計</h2>
             <p style="margin-top: 0; color: #666;">各投稿タイプのサイトマップ掲載状況</p>
@@ -311,34 +402,210 @@ $urls = KSUS_Admin::get_sitemap_urls();
                 </tbody>
             </table>
         </div>
+        </div><!-- #tab-stats -->
 
-        <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-
-        <!-- 使い方 -->
+        <!-- 使い方タブ -->
+        <div id="tab-usage" class="ksus-tab-content" style="display: none;">
         <div class="ksus-card">
-            <h2>使い方</h2>
-            <ol>
-                <li><strong>サイトマップ設定</strong><br>
-                    「サイトマップ設定」で投稿タイプの有効/無効、画像・動画、ニュースサイトマップの設定を行います。</li>
-                <li><strong>個別投稿の除外設定</strong><br>
-                    各投稿の編集画面サイドバーにある「Kashiwazaki SEO Universal Sitemap」メタボックスから、個別にサイトマップから除外できます。</li>
-                <li><strong>Google Search Consoleに登録</strong><br>
-                    インデックスサイトマップURL（<code><?php echo esc_html($urls['index']); ?></code>）をGoogle Search Consoleに登録してください。</li>
-            </ol>
-            <p style="padding: 10px; background: #f0f0f1; border-left: 3px solid #666;">
-                <strong>自動再生成について</strong><br>
-                サイトマップは設定保存時、および投稿の公開・更新時に自動的に再生成されます。
-            </p>
-        </div>
+            <h2>📚 詳細な使い方ガイド</h2>
 
-        <!-- プラグイン情報 -->
-        <div class="ksus-card ksus-info">
-            <p>
-                <strong>Kashiwazaki SEO Universal Sitemap</strong> Version <?php echo esc_html(KSUS_VERSION); ?><br>
-                Author: 柏崎剛 (Tsuyoshi Kashiwazaki) |
-                <a href="https://www.tsuyoshikashiwazaki.jp/profile/" target="_blank">プロフィール</a> |
-                <a href="https://www.tsuyoshikashiwazaki.jp" target="_blank">ウェブサイト</a>
-            </p>
+            <h3>🎯 基本的な使い方</h3>
+            <ol>
+                <li><strong>プラグインのインストールと有効化</strong>
+                    <p>プラグインを有効化すると、自動的にサイトマップが生成されます。</p>
+                </li>
+
+                <li><strong>Google Search Consoleに登録</strong>
+                    <p>インデックスサイトマップURL：<code><?php echo esc_html($urls['index']['url']); ?></code></p>
+                    <p>このURLをGoogle Search Consoleの「サイトマップ」セクションに登録してください。</p>
+                </li>
+
+                <li><strong>サイトマップの確認</strong>
+                    <p>「サイトマップ & 設定」タブのサイトマップURLテーブルから、各サイトマップにアクセスして内容を確認できます。</p>
+                </li>
+            </ol>
+
+            <h3>⚙️ 詳細設定</h3>
+
+            <h4>投稿タイプの設定</h4>
+            <ul>
+                <li><strong>サイトマップに含める：</strong> チェックを入れた投稿タイプのサイトマップが生成されます</li>
+                <li><strong>更新頻度（changefreq）：</strong> Googlebotにコンテンツの更新頻度を伝えます
+                    <ul>
+                        <li>always：常に更新</li>
+                        <li>hourly：毎時</li>
+                        <li>daily：毎日（ブログ推奨）</li>
+                        <li>weekly：毎週（通常の投稿推奨）</li>
+                        <li>monthly：毎月（固定ページ推奨）</li>
+                        <li>yearly：毎年</li>
+                        <li>never：更新なし</li>
+                    </ul>
+                </li>
+                <li><strong>優先度（priority）：</strong> 0.0〜1.0の値で、サイト内での重要度を指定
+                    <ul>
+                        <li>1.0：最重要ページ</li>
+                        <li>0.8：重要なページ（投稿推奨）</li>
+                        <li>0.6：標準（固定ページ推奨）</li>
+                        <li>0.5：通常のページ</li>
+                        <li>0.0〜0.4：優先度の低いページ</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>画像・動画情報</h4>
+            <ul>
+                <li><strong>画像情報：</strong> アイキャッチ画像と本文中の画像をサイトマップに含めます（Google画像検索対策）</li>
+                <li><strong>動画情報：</strong> YouTube・Vimeo動画をサイトマップに含めます（Google動画検索対策）</li>
+                <li><strong>GZIP圧縮：</strong> ファイルサイズを約90-98%削減。帯域幅の節約に効果的（推奨）</li>
+                <li><strong>HTMLヘッダー出力：</strong> &lt;head&gt;に&lt;link rel="sitemap"&gt;を追加。検索エンジンの発見を容易にします</li>
+            </ul>
+
+            <h4>ニュースサイトマップ</h4>
+            <ul>
+                <li>Googleニュースに掲載したい投稿タイプにチェックを入れてください</li>
+                <li>自動的に1,000件ごとに分割されます（Google仕様）</li>
+                <li>最新記事が優先的に掲載されます</li>
+            </ul>
+
+            <h3>🚀 高度な機能</h3>
+
+            <h4>自動分割機能</h4>
+            <ul>
+                <li><strong>投稿タイプサイトマップ：</strong> 50,000件を超えると自動的に複数ファイルに分割
+                    <ul>
+                        <li>sitemap-post.xml（最初の50,000件）</li>
+                        <li>sitemap-post-2.xml（次の50,000件）</li>
+                        <li>sitemap-post-3.xml（さらに次の50,000件）...</li>
+                    </ul>
+                </li>
+                <li><strong>ニュースサイトマップ：</strong> 1,000件を超えると自動分割
+                    <ul>
+                        <li>sitemap-googlenews.xml（最初の1,000件）</li>
+                        <li>sitemap-googlenews-2.xml（次の1,000件）...</li>
+                    </ul>
+                </li>
+                <li>すべての分割ファイルは自動的にインデックスサイトマップ（sitemap.xml）に登録されます</li>
+            </ul>
+
+            <h4>個別投稿の除外</h4>
+            <p>投稿編集画面の右サイドバーにある「Kashiwazaki SEO Universal Sitemap」メタボックスから、特定の投稿をサイトマップから除外できます。</p>
+            <ul>
+                <li>非公開にしたい投稿</li>
+                <li>下書き段階の投稿</li>
+                <li>SEO評価を受けたくないページ</li>
+            </ul>
+
+            <h3>💡 トラブルシューティング</h3>
+
+            <h4>サイトマップが表示されない場合</h4>
+            <ol>
+                <li><strong>リライトルールをフラッシュ：</strong>
+                    <p>「設定」→「パーマリンク設定」を開き、「変更を保存」をクリック</p>
+                </li>
+                <li><strong>手動で再生成：</strong>
+                    <p>「サイトマップを再生成」ボタンをクリック</p>
+                </li>
+                <li><strong>ファイル権限確認：</strong>
+                    <p>/wp-content/uploads/sitemaps/ ディレクトリが書き込み可能か確認</p>
+                </li>
+            </ol>
+
+            <h4>設定が反映されない場合</h4>
+            <ul>
+                <li>設定保存後、必ず「サイトマップを再生成」ボタンをクリック</li>
+                <li>ブラウザのキャッシュをクリア</li>
+                <li>debug.log（/wp-content/debug.log）でエラーを確認</li>
+            </ul>
+
+            <h3>📖 参考情報</h3>
+            <ul>
+                <li><strong>Googleサイトマップ仕様：</strong> <a href="https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview" target="_blank">公式ドキュメント</a></li>
+                <li><strong>Googleニュースサイトマップ：</strong> <a href="https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap" target="_blank">公式ドキュメント</a></li>
+                <li><strong>画像サイトマップ：</strong> <a href="https://developers.google.com/search/docs/crawling-indexing/sitemaps/image-sitemaps" target="_blank">公式ドキュメント</a></li>
+                <li><strong>動画サイトマップ：</strong> <a href="https://developers.google.com/search/docs/crawling-indexing/sitemaps/video-sitemaps" target="_blank">公式ドキュメント</a></li>
+            </ul>
+
+            <div style="padding: 15px; background: #f0f0f1; border-left: 4px solid #0073aa; margin-top: 20px;">
+                <h4 style="margin-top: 0;">⚡ 自動再生成について</h4>
+                <p>サイトマップは以下のタイミングで自動的に再生成されます：</p>
+                <ul style="margin-bottom: 0;">
+                    <li>設定保存時</li>
+                    <li>投稿の公開・更新時</li>
+                    <li>投稿の削除時</li>
+                </ul>
+            </div>
         </div>
+        </div><!-- #tab-usage -->
+
+    </div><!-- .ksus-admin-container -->
+
+    <!-- プラグイン情報 -->
+    <div class="ksus-card ksus-info" style="margin-top: 20px;">
+        <p>
+            <strong>Kashiwazaki SEO Universal Sitemap</strong> Version <?php echo esc_html(KSUS_VERSION); ?><br>
+            Author: 柏崎剛 (Tsuyoshi Kashiwazaki) |
+            <a href="https://www.tsuyoshikashiwazaki.jp/profile/" target="_blank">プロフィール</a> |
+            <a href="https://www.tsuyoshikashiwazaki.jp" target="_blank">ウェブサイト</a>
+        </p>
     </div>
 </div>
+
+<style>
+.ksus-collapsible-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+.ksus-collapsible-toggle .dashicons {
+    transition: transform 0.3s ease;
+}
+.ksus-collapsible-toggle.collapsed .dashicons {
+    transform: rotate(-90deg);
+}
+</style>
+
+<script>
+jQuery(document).ready(function($) {
+    // タブ切り替え
+    $('.nav-tab').on('click', function(e) {
+        e.preventDefault();
+        const tab = $(this).data('tab');
+
+        // すべてのタブを非アクティブ化
+        $('.nav-tab').removeClass('nav-tab-active');
+        $('.ksus-tab-content').hide();
+
+        // クリックされたタブをアクティブ化
+        $(this).addClass('nav-tab-active');
+        $('#tab-' + tab).show();
+
+        // URLハッシュを更新
+        window.location.hash = 'tab-' + tab;
+    });
+
+    // ページロード時のハッシュ処理
+    if (window.location.hash) {
+        const hash = window.location.hash.substring(1);
+        const tab = hash.replace('tab-', '');
+        if ($('#' + hash).length > 0) {
+            $('.nav-tab').removeClass('nav-tab-active');
+            $('.ksus-tab-content').hide();
+            $('[data-tab="' + tab + '"]').addClass('nav-tab-active');
+            $('#' + hash).show();
+        }
+    }
+
+    // 折りたたみ機能
+    $('.ksus-collapsible-toggle').on('click', function() {
+        const $content = $(this).next('.ksus-collapsible-content');
+        const $icon = $(this).find('.dashicons');
+
+        if ($content.is(':visible')) {
+            $content.slideUp(300);
+            $(this).addClass('collapsed');
+        } else {
+            $content.slideDown(300);
+            $(this).removeClass('collapsed');
+        }
+    });
+});
+</script>

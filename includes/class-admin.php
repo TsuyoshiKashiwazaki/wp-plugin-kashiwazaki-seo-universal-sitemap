@@ -30,6 +30,17 @@ class KSUS_Admin {
         add_action('update_option_ksus_include_images', array($this, 'regenerate_on_settings_update'), 10, 2);
         add_action('update_option_ksus_include_videos', array($this, 'regenerate_on_settings_update'), 10, 2);
         add_action('update_option_ksus_post_type_settings', array($this, 'regenerate_on_settings_update'), 10, 2);
+        add_action('update_option_ksus_enable_gzip', array($this, 'regenerate_on_settings_update'), 10, 2);
+        add_filter('plugin_action_links_kashiwazaki-seo-universal-sitemap/kashiwazaki-seo-universal-sitemap.php', array($this, 'add_plugin_action_links'));
+    }
+
+    /**
+     * プラグイン一覧に「設定」リンクを追加
+     */
+    public function add_plugin_action_links($links) {
+        $settings_link = '<a href="' . admin_url('admin.php?page=kashiwazaki-seo-universal-sitemap') . '">設定</a>';
+        array_unshift($links, $settings_link);
+        return $links;
     }
 
     /**
@@ -203,22 +214,135 @@ class KSUS_Admin {
     }
 
     /**
-     * サイトマップURLを取得
+     * サイトマップURLを取得（分割ファイル対応）
      */
     public static function get_sitemap_urls() {
         $home_url = home_url('/');
+        $upload_dir = wp_upload_dir();
+        $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
+
+        // インデックスサイトマップのURL（GZIPチェック）
+        $index_url = $home_url . 'sitemap.xml';
+        if (file_exists($sitemap_dir . 'sitemap.xml.gz')) {
+            $index_url = $home_url . 'sitemap.xml.gz';
+        }
+
         $urls = array(
-            'index' => $home_url . 'sitemap.xml'
+            'index' => array(
+                'url' => $index_url,
+                'files' => array($index_url)
+            )
         );
 
         $post_types = get_post_types(array('public' => true), 'names');
         unset($post_types['attachment']);
 
         foreach ($post_types as $post_type) {
-            $urls[$post_type] = $home_url . 'sitemap-' . $post_type . '.xml';
+            $file_urls = array();
+
+            // まず番号なしファイル（常に最初）を確認（.xml.gz と .xml 両方）
+            $gz_file = $sitemap_dir . 'sitemap-' . $post_type . '.xml.gz';
+            $xml_file = $sitemap_dir . 'sitemap-' . $post_type . '.xml';
+
+            if (file_exists($gz_file)) {
+                $file_urls[] = $home_url . 'sitemap-' . $post_type . '.xml.gz';
+            } elseif (file_exists($xml_file)) {
+                $file_urls[] = $home_url . 'sitemap-' . $post_type . '.xml';
+            }
+
+            // 次に分割ファイル（-2以降）を検索（数字のみ、.xml と .xml.gz 両方）
+            $numbered_files = array();
+            foreach (array('xml', 'xml.gz') as $ext) {
+                $pattern = $sitemap_dir . 'sitemap-' . $post_type . '-*.' . $ext;
+                $files = glob($pattern);
+
+                if ($files && !empty($files)) {
+                    foreach ($files as $file) {
+                        $filename = basename($file);
+                        // sitemap-{post_type}-{数字}.xml(.gz) の形式のみマッチ
+                        if (preg_match('/^sitemap-' . preg_quote($post_type, '/') . '-(\d+)\.(xml|xml\.gz)$/', $filename)) {
+                            $numbered_files[] = $file;
+                        }
+                    }
+                }
+            }
+
+            if (!empty($numbered_files)) {
+                // ファイル名でソート（数値順）
+                usort($numbered_files, function($a, $b) {
+                    preg_match('/-(\d+)\.(xml|xml\.gz)$/', $a, $match_a);
+                    preg_match('/-(\d+)\.(xml|xml\.gz)$/', $b, $match_b);
+                    $num_a = isset($match_a[1]) ? intval($match_a[1]) : 0;
+                    $num_b = isset($match_b[1]) ? intval($match_b[1]) : 0;
+                    return $num_a - $num_b;
+                });
+
+                foreach ($numbered_files as $file) {
+                    $filename = basename($file);
+                    $file_urls[] = $home_url . $filename;
+                }
+            }
+
+            if (!empty($file_urls)) {
+                $urls[$post_type] = array(
+                    'url' => $file_urls[0], // 最初のファイルをメインURLとする
+                    'files' => $file_urls
+                );
+            }
         }
 
-        $urls['googlenews'] = $home_url . 'sitemap-googlenews.xml';
+        // ニュースサイトマップ（分割ファイル対応）
+        $news_file_urls = array();
+
+        // まず番号なしファイル（常に最初）を確認（.xml.gz と .xml 両方）
+        $gz_file = $sitemap_dir . 'sitemap-googlenews.xml.gz';
+        $xml_file = $sitemap_dir . 'sitemap-googlenews.xml';
+
+        if (file_exists($gz_file)) {
+            $news_file_urls[] = $home_url . 'sitemap-googlenews.xml.gz';
+        } elseif (file_exists($xml_file)) {
+            $news_file_urls[] = $home_url . 'sitemap-googlenews.xml';
+        }
+
+        // 次に分割ファイル（-2以降）を検索（.xml と .xml.gz 両方）
+        $numbered_files = array();
+        foreach (array('xml', 'xml.gz') as $ext) {
+            $pattern = $sitemap_dir . 'sitemap-googlenews-*.' . $ext;
+            $files = glob($pattern);
+
+            if ($files && !empty($files)) {
+                foreach ($files as $file) {
+                    $filename = basename($file);
+                    // sitemap-googlenews-{数字}.xml(.gz) の形式のみマッチ
+                    if (preg_match('/^sitemap-googlenews-(\d+)\.(xml|xml\.gz)$/', $filename)) {
+                        $numbered_files[] = $file;
+                    }
+                }
+            }
+        }
+
+        if (!empty($numbered_files)) {
+            // ファイル名でソート（数値順）
+            usort($numbered_files, function($a, $b) {
+                preg_match('/-(\d+)\.(xml|xml\.gz)$/', $a, $match_a);
+                preg_match('/-(\d+)\.(xml|xml\.gz)$/', $b, $match_b);
+                $num_a = isset($match_a[1]) ? intval($match_a[1]) : 0;
+                $num_b = isset($match_b[1]) ? intval($match_b[1]) : 0;
+                return $num_a - $num_b;
+            });
+
+            foreach ($numbered_files as $file) {
+                $filename = basename($file);
+                $news_file_urls[] = $home_url . $filename;
+            }
+        }
+
+        if (!empty($news_file_urls)) {
+            $urls['googlenews'] = array(
+                'url' => $news_file_urls[0],
+                'files' => $news_file_urls
+            );
+        }
 
         return $urls;
     }
@@ -234,10 +358,23 @@ class KSUS_Admin {
             return 0;
         }
 
-        $content = file_get_contents($file_path);
+        // GZIPファイルの場合は解凍して読み込む
+        try {
+            if (substr($filename, -3) === '.gz') {
+                $content = @file_get_contents('compress.zlib://' . $file_path);
+            } else {
+                $content = @file_get_contents($file_path);
+            }
+
+            if ($content === false || empty($content)) {
+                return 0;
+            }
+        } catch (Exception $e) {
+            return 0;
+        }
 
         // インデックスサイトマップの場合は<sitemap>タグを数える
-        if ($filename === 'sitemap.xml') {
+        if (strpos($filename, 'sitemap.xml') === 0) {
             $count = substr_count($content, '<sitemap>');
         } else {
             // 通常のサイトマップは<url>タグを数える
@@ -245,6 +382,96 @@ class KSUS_Admin {
         }
 
         return $count;
+    }
+
+    /**
+     * 投稿タイプまたはニュースサイトマップの統計情報を取得（分割ファイル対応）
+     */
+    public static function get_split_sitemap_stats($type) {
+        $upload_dir = wp_upload_dir();
+        $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
+
+        $stats = array(
+            'file_count' => 0,
+            'total_urls' => 0,
+            'files' => array()
+        );
+
+        $all_files = array();
+
+        // まず番号なしファイルを確認（.xml.gz と .xml 両方）
+        if ($type === 'googlenews') {
+            $gz_file = $sitemap_dir . 'sitemap-googlenews.xml.gz';
+            $xml_file = $sitemap_dir . 'sitemap-googlenews.xml';
+        } else {
+            $gz_file = $sitemap_dir . 'sitemap-' . $type . '.xml.gz';
+            $xml_file = $sitemap_dir . 'sitemap-' . $type . '.xml';
+        }
+
+        if (file_exists($gz_file)) {
+            $all_files[] = $gz_file;
+        } elseif (file_exists($xml_file)) {
+            $all_files[] = $xml_file;
+        }
+
+        // 次に分割ファイル（-2以降）を検索（数字のみ、.xml と .xml.gz 両方）
+        $numbered_files = array();
+        foreach (array('xml', 'xml.gz') as $ext) {
+            if ($type === 'googlenews') {
+                $pattern = $sitemap_dir . 'sitemap-googlenews-*.' . $ext;
+            } else {
+                $pattern = $sitemap_dir . 'sitemap-' . $type . '-*.' . $ext;
+            }
+
+            $files = glob($pattern);
+
+            if ($files && !empty($files)) {
+                foreach ($files as $file) {
+                    $filename = basename($file);
+                    // sitemap-{type}-{数字}.xml(.gz) の形式のみマッチ
+                    if ($type === 'googlenews') {
+                        if (preg_match('/^sitemap-googlenews-(\d+)\.(xml|xml\.gz)$/', $filename)) {
+                            $numbered_files[] = $file;
+                        }
+                    } else {
+                        if (preg_match('/^sitemap-' . preg_quote($type, '/') . '-(\d+)\.(xml|xml\.gz)$/', $filename)) {
+                            $numbered_files[] = $file;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($numbered_files)) {
+            // ファイル名でソート（数値順）
+            usort($numbered_files, function($a, $b) {
+                preg_match('/-(\d+)\.(xml|xml\.gz)$/', $a, $match_a);
+                preg_match('/-(\d+)\.(xml|xml\.gz)$/', $b, $match_b);
+                $num_a = isset($match_a[1]) ? intval($match_a[1]) : 0;
+                $num_b = isset($match_b[1]) ? intval($match_b[1]) : 0;
+                return $num_a - $num_b;
+            });
+
+            $all_files = array_merge($all_files, $numbered_files);
+        }
+
+        if (empty($all_files)) {
+            return $stats;
+        }
+
+        $stats['file_count'] = count($all_files);
+
+        foreach ($all_files as $file) {
+            $filename = basename($file);
+            $url_count = self::get_sitemap_url_count($filename);
+            $stats['total_urls'] += $url_count;
+            $stats['files'][] = array(
+                'filename' => $filename,
+                'url_count' => $url_count
+            );
+        }
+
+        return $stats;
     }
 
     /**
@@ -278,6 +505,16 @@ class KSUS_Admin {
             'type' => 'array',
             'default' => array(),
             'sanitize_callback' => array($this, 'sanitize_post_type_settings')
+        ));
+
+        register_setting('ksus_settings', 'ksus_enable_gzip', array(
+            'type' => 'boolean',
+            'default' => false
+        ));
+
+        register_setting('ksus_settings', 'ksus_enable_head_link', array(
+            'type' => 'boolean',
+            'default' => true
         ));
     }
 
@@ -371,13 +608,15 @@ class KSUS_Admin {
         if ($old_value !== $new_value) {
             KSUS_Sitemap_Generator::get_instance()->generate_all_sitemaps();
 
-            // 成功メッセージを追加
-            add_settings_error(
-                'ksus_messages',
-                'ksus_message',
-                'サイトマップを再生成しました。',
-                'updated'
-            );
+            // 成功メッセージを追加（管理画面のみ）
+            if (function_exists('add_settings_error')) {
+                add_settings_error(
+                    'ksus_messages',
+                    'ksus_message',
+                    'サイトマップを再生成しました。',
+                    'updated'
+                );
+            }
         }
     }
 }

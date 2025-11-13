@@ -27,6 +27,31 @@ class KSUS_Sitemap_Generator {
         add_action('query_vars', array($this, 'add_query_vars'));
         add_action('template_redirect', array($this, 'serve_sitemap'));
         add_filter('redirect_canonical', array($this, 'disable_sitemap_redirect'), 10, 2);
+        add_action('wp_head', array($this, 'add_sitemap_to_head'), 1);
+    }
+
+    /**
+     * HTML headにサイトマップリンクを追加
+     */
+    public function add_sitemap_to_head() {
+        // 設定がONの場合のみ追加
+        if (!get_option('ksus_enable_head_link', true)) {
+            return;
+        }
+
+        $home_url = home_url('/');
+        // GZIP有効時は.xml.gzを出力
+        $extension = get_option('ksus_enable_gzip', false) ? '.xml.gz' : '.xml';
+        $sitemap_url = $home_url . 'sitemap' . $extension;
+        echo '<link rel="sitemap" type="application/xml" title="Sitemap" href="' . esc_url($sitemap_url) . '" />' . "\n";
+    }
+
+    /**
+     * サイトマップディレクトリのパスを取得
+     */
+    private function get_sitemap_dir() {
+        $upload_dir = wp_upload_dir();
+        return $upload_dir['basedir'] . '/sitemaps/';
     }
 
     /**
@@ -47,10 +72,10 @@ class KSUS_Sitemap_Generator {
 
         $home_url = home_url('/');
         $lastmod = date('c', current_time('timestamp'));
-        $upload_dir = wp_upload_dir();
-        $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
+        $sitemap_dir = $this->get_sitemap_dir();
+        $file_ext = $this->get_file_extension();
 
-        // 投稿タイプ別サイトマップ
+        // 投稿タイプ別サイトマップ（分割ファイル対応）
         $post_types = $this->get_allowed_post_types();
         $enabled_post_types = get_option('ksus_enabled_post_types', false);
 
@@ -60,21 +85,107 @@ class KSUS_Sitemap_Generator {
         }
 
         foreach ($post_types as $post_type) {
-            // 有効で、かつファイルが存在する場合のみインデックスに含める
-            if (in_array($post_type, $enabled_post_types) && file_exists($sitemap_dir . 'sitemap-' . $post_type . '.xml')) {
-                $xml .= "\t<sitemap>\n";
-                $xml .= "\t\t<loc>" . esc_url($home_url . 'sitemap-' . $post_type . '.xml') . "</loc>\n";
-                $xml .= "\t\t<lastmod>" . $lastmod . "</lastmod>\n";
-                $xml .= "\t</sitemap>\n";
+            // 有効な投稿タイプのみ処理
+            if (in_array($post_type, $enabled_post_types)) {
+                $has_sitemap = false;
+
+                // まず番号なしファイル（常に最初）を確認
+                $single_file = $this->file_exists_either($sitemap_dir, 'sitemap-' . $post_type);
+                if ($single_file) {
+                    $filename = basename($single_file);
+                    $xml .= "\t<sitemap>\n";
+                    $xml .= "\t\t<loc>" . esc_url($home_url . $filename) . "</loc>\n";
+                    $xml .= "\t\t<lastmod>" . $lastmod . "</lastmod>\n";
+                    $xml .= "\t</sitemap>\n";
+                    $has_sitemap = true;
+                }
+
+                // 次に分割ファイル（-2以降）を検索（数字のみ、.xml と .xml.gz 両方）
+                $numbered_files = array();
+                foreach (array('xml', 'xml.gz') as $ext) {
+                    $pattern = $sitemap_dir . 'sitemap-' . $post_type . '-*.' . $ext;
+                    $files = glob($pattern);
+
+                    if ($files && !empty($files)) {
+                        foreach ($files as $file) {
+                            $filename = basename($file);
+                            // sitemap-{post_type}-{数字}.xml(.gz) の形式のみマッチ
+                            if (preg_match('/^sitemap-' . preg_quote($post_type, '/') . '-(\d+)\.(xml|xml\.gz)$/', $filename)) {
+                                $numbered_files[] = $file;
+                            }
+                        }
+                    }
+                }
+
+                if (!empty($numbered_files)) {
+                    // ファイル名でソート（数値順）
+                    usort($numbered_files, function($a, $b) {
+                        preg_match('/-(\d+)\.(xml|xml\.gz)$/', $a, $match_a);
+                        preg_match('/-(\d+)\.(xml|xml\.gz)$/', $b, $match_b);
+                        $num_a = isset($match_a[1]) ? intval($match_a[1]) : 0;
+                        $num_b = isset($match_b[1]) ? intval($match_b[1]) : 0;
+                        return $num_a - $num_b;
+                    });
+
+                    foreach ($numbered_files as $file) {
+                        $filename = basename($file);
+                        $xml .= "\t<sitemap>\n";
+                        $xml .= "\t\t<loc>" . esc_url($home_url . $filename) . "</loc>\n";
+                        $xml .= "\t\t<lastmod>" . $lastmod . "</lastmod>\n";
+                        $xml .= "\t</sitemap>\n";
+                        $has_sitemap = true;
+                    }
+                }
             }
         }
 
-        // ニュースサイトマップ（ファイルが存在する場合のみ）
-        if ($this->has_news_posts() && file_exists($sitemap_dir . 'sitemap-googlenews.xml')) {
-            $xml .= "\t<sitemap>\n";
-            $xml .= "\t\t<loc>" . esc_url($home_url . 'sitemap-googlenews.xml') . "</loc>\n";
-            $xml .= "\t\t<lastmod>" . $lastmod . "</lastmod>\n";
-            $xml .= "\t</sitemap>\n";
+        // ニュースサイトマップ（分割ファイル対応）
+        if ($this->has_news_posts()) {
+            // まず番号なしファイル（常に最初）を確認
+            $single_file = $this->file_exists_either($sitemap_dir, 'sitemap-googlenews');
+            if ($single_file) {
+                $filename = basename($single_file);
+                $xml .= "\t<sitemap>\n";
+                $xml .= "\t\t<loc>" . esc_url($home_url . $filename) . "</loc>\n";
+                $xml .= "\t\t<lastmod>" . $lastmod . "</lastmod>\n";
+                $xml .= "\t</sitemap>\n";
+            }
+
+            // 次に分割ファイル（-2以降）を検索（数字のみ、.xml と .xml.gz 両方）
+            $numbered_files = array();
+            foreach (array('xml', 'xml.gz') as $ext) {
+                $pattern = $sitemap_dir . 'sitemap-googlenews-*.' . $ext;
+                $files = glob($pattern);
+
+                if ($files && !empty($files)) {
+                    foreach ($files as $file) {
+                        $filename = basename($file);
+                        // sitemap-googlenews-{数字}.xml(.gz) の形式のみマッチ
+                        if (preg_match('/^sitemap-googlenews-(\d+)\.(xml|xml\.gz)$/', $filename)) {
+                            $numbered_files[] = $file;
+                        }
+                    }
+                }
+            }
+
+            if (!empty($numbered_files)) {
+                // ファイル名でソート（数値順）
+                usort($numbered_files, function($a, $b) {
+                    preg_match('/-(\d+)\.(xml|xml\.gz)$/', $a, $match_a);
+                    preg_match('/-(\d+)\.(xml|xml\.gz)$/', $b, $match_b);
+                    $num_a = isset($match_a[1]) ? intval($match_a[1]) : 0;
+                    $num_b = isset($match_b[1]) ? intval($match_b[1]) : 0;
+                    return $num_a - $num_b;
+                });
+
+                foreach ($numbered_files as $file) {
+                    $filename = basename($file);
+                    $xml .= "\t<sitemap>\n";
+                    $xml .= "\t\t<loc>" . esc_url($home_url . $filename) . "</loc>\n";
+                    $xml .= "\t\t<lastmod>" . $lastmod . "</lastmod>\n";
+                    $xml .= "\t</sitemap>\n";
+                }
+            }
         }
 
         $xml .= '</sitemapindex>';
@@ -103,10 +214,15 @@ class KSUS_Sitemap_Generator {
             if (in_array($post_type, $enabled_post_types)) {
                 $this->generate_post_type_sitemap($post_type);
             } else {
-                // 無効な投稿タイプのサイトマップファイルを削除
-                $file_path = $sitemap_dir . 'sitemap-' . $post_type . '.xml';
-                if (file_exists($file_path)) {
-                    unlink($file_path);
+                // 無効な投稿タイプのサイトマップファイルを削除（.xml と .xml.gz 両方）
+                $xml_file = $sitemap_dir . 'sitemap-' . $post_type . '.xml';
+                $gz_file = $sitemap_dir . 'sitemap-' . $post_type . '.xml.gz';
+
+                if (file_exists($xml_file)) {
+                    unlink($xml_file);
+                }
+                if (file_exists($gz_file)) {
+                    unlink($gz_file);
                 }
             }
         }
@@ -116,61 +232,146 @@ class KSUS_Sitemap_Generator {
      * 特定の投稿タイプのサイトマップを生成
      */
     private function generate_post_type_sitemap($post_type) {
-        $args = array(
-            'post_type' => $post_type,
-            'post_status' => 'publish',
-            'posts_per_page' => -1
-        );
+        $upload_dir = wp_upload_dir();
+        $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
 
-        $posts = get_posts($args);
-        $url_count = 0;
+        // 古い分割ファイルを削除（番号なしファイルは残す）
+        $this->cleanup_old_sitemap_files($post_type);
 
+        $max_urls_per_file = 50000; // Google推奨の上限
+        $batch_size = 500; // メモリ効率化のためのバッチサイズ
+        $offset = 0;
+        $file_number = 1; // 最初のファイルは番号なし、2番目から-2, -3...
+        $current_file_url_count = 0;
+        $total_url_count = 0;
+        $xml = '';
+
+        // XMLヘッダーを初期化
+        $xml = $this->get_sitemap_xml_header();
+
+        while (true) {
+            $args = array(
+                'post_type' => $post_type,
+                'post_status' => 'publish',
+                'posts_per_page' => $batch_size,
+                'offset' => $offset,
+                'orderby' => 'ID',
+                'order' => 'ASC'
+            );
+
+            $posts = get_posts($args);
+
+            // 投稿がなくなったら終了
+            if (empty($posts)) {
+                break;
+            }
+
+            foreach ($posts as $post) {
+                $sitemap_type = get_post_meta($post->ID, '_ksus_sitemap_type', true);
+
+                // 除外は含めない
+                if ($sitemap_type === 'exclude') {
+                    continue;
+                }
+
+                // 上限に達したら現在のファイルを保存して新しいファイルを開始
+                if ($current_file_url_count >= $max_urls_per_file) {
+                    $xml .= '</urlset>';
+
+                    // ファイルを保存
+                    if ($file_number === 1) {
+                        // 最初のファイルは番号なし
+                        $this->save_sitemap('sitemap-' . $post_type . '.xml', $xml);
+                    } else {
+                        // 2番目以降は -2, -3, -4...
+                        $this->save_sitemap('sitemap-' . $post_type . '-' . $file_number . '.xml', $xml);
+                    }
+
+                    $file_number++;
+                    $current_file_url_count = 0;
+                    $xml = $this->get_sitemap_xml_header();
+                }
+
+                $xml .= "\t<url>\n";
+                $xml .= "\t\t<loc>" . esc_url(get_permalink($post->ID)) . "</loc>\n";
+                $xml .= "\t\t<lastmod>" . get_post_modified_time('c', false, $post) . "</lastmod>\n";
+                $xml .= "\t\t<changefreq>" . $this->get_change_frequency($post_type) . "</changefreq>\n";
+                $xml .= "\t\t<priority>" . $this->get_priority($post_type) . "</priority>\n";
+
+                // 設定に基づいて画像・動画情報を含める
+                $include_images = get_option('ksus_include_images', true);
+                $include_videos = get_option('ksus_include_videos', true);
+
+                if ($include_images) {
+                    $images_xml = $this->get_images_xml($post);
+                    if (!empty($images_xml)) {
+                        $xml .= $images_xml;
+                    }
+                }
+
+                if ($include_videos) {
+                    $videos_xml = $this->get_videos_xml($post);
+                    if (!empty($videos_xml)) {
+                        $xml .= $videos_xml;
+                    }
+                }
+
+                $xml .= "\t</url>\n";
+                $current_file_url_count++;
+                $total_url_count++;
+            }
+
+            $offset += $batch_size;
+        }
+
+        // 最後のファイルを保存
+        if ($current_file_url_count > 0) {
+            $xml .= '</urlset>';
+
+            if ($file_number === 1) {
+                // 最初のファイル（50,000件以下の場合）は番号なし
+                $this->save_sitemap('sitemap-' . $post_type . '.xml', $xml);
+            } else {
+                // 2番目以降のファイルは番号付き
+                $this->save_sitemap('sitemap-' . $post_type . '-' . $file_number . '.xml', $xml);
+            }
+        }
+    }
+
+    /**
+     * サイトマップXMLヘッダーを取得
+     */
+    private function get_sitemap_xml_header() {
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ';
         $xml .= 'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" ';
         $xml .= 'xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">' . "\n";
+        return $xml;
+    }
 
-        foreach ($posts as $post) {
-            $sitemap_type = get_post_meta($post->ID, '_ksus_sitemap_type', true);
+    /**
+     * 古いサイトマップファイルをクリーンアップ
+     */
+    private function cleanup_old_sitemap_files($post_type) {
+        $upload_dir = wp_upload_dir();
+        $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
 
-            // 除外は含めない
-            if ($sitemap_type === 'exclude') {
-                continue;
-            }
-
-            $xml .= "\t<url>\n";
-            $xml .= "\t\t<loc>" . esc_url(get_permalink($post->ID)) . "</loc>\n";
-            $xml .= "\t\t<lastmod>" . get_post_modified_time('c', false, $post) . "</lastmod>\n";
-            $xml .= "\t\t<changefreq>" . $this->get_change_frequency($post_type) . "</changefreq>\n";
-            $xml .= "\t\t<priority>" . $this->get_priority($post_type) . "</priority>\n";
-
-            // 設定に基づいて画像・動画情報を含める
-            $include_images = get_option('ksus_include_images', true);
-            $include_videos = get_option('ksus_include_videos', true);
-
-            if ($include_images) {
-                $images_xml = $this->get_images_xml($post);
-                if (!empty($images_xml)) {
-                    $xml .= $images_xml;
-                }
-            }
-
-            if ($include_videos) {
-                $videos_xml = $this->get_videos_xml($post);
-                if (!empty($videos_xml)) {
-                    $xml .= $videos_xml;
-                }
-            }
-
-            $xml .= "\t</url>\n";
-            $url_count++;
+        if (!is_dir($sitemap_dir)) {
+            return;
         }
 
-        $xml .= '</urlset>';
+        // 番号付きファイル（-2以降）を削除（.xml と .xml.gz 両方）
+        foreach (array('xml', 'xml.gz') as $ext) {
+            $pattern = $sitemap_dir . 'sitemap-' . $post_type . '-*.' . $ext;
+            $files = glob($pattern);
 
-        // URLが1件以上ある場合のみファイルに保存
-        if ($url_count > 0) {
-            $this->save_sitemap('sitemap-' . $post_type . '.xml', $xml);
+            if ($files) {
+                foreach ($files as $file) {
+                    if (file_exists($file)) {
+                        unlink($file);
+                    }
+                }
+            }
         }
     }
 
@@ -181,82 +382,162 @@ class KSUS_Sitemap_Generator {
         // 設定から対象投稿タイプを取得
         $news_post_types = get_option('ksus_news_post_types', array());
 
+        $upload_dir = wp_upload_dir();
+        $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
+
+        // 古い分割ファイルを削除
+        $this->cleanup_old_news_sitemap_files();
+
         if (empty($news_post_types)) {
-            // 設定がない場合は既存ファイルを削除
-            $upload_dir = wp_upload_dir();
-            $file_path = $upload_dir['basedir'] . '/sitemaps/sitemap-googlenews.xml';
-            if (file_exists($file_path)) {
-                unlink($file_path);
+            // ニュース設定が空の場合は基本ファイルも削除
+            foreach (array('xml', 'xml.gz') as $ext) {
+                $file = $sitemap_dir . 'sitemap-googlenews.' . $ext;
+                if (file_exists($file)) {
+                    unlink($file);
+                }
             }
             return;
         }
 
-        $args = array(
-            'post_type' => $news_post_types,
-            'post_status' => 'publish',
-            'posts_per_page' => -1
-        );
+        $max_urls_per_file = 1000; // Googleニュースサイトマップの上限
+        $batch_size = 100; // メモリ効率化のためのバッチサイズ
+        $offset = 0;
+        $file_number = 1; // 最初のファイルは番号なし、2番目から-2, -3...
+        $current_file_url_count = 0;
+        $total_url_count = 0;
+        $xml = '';
 
-        $posts = get_posts($args);
-        $url_count = 0;
+        // XMLヘッダーを初期化
+        $xml = $this->get_news_sitemap_xml_header();
 
+        while (true) {
+            $args = array(
+                'post_type' => $news_post_types,
+                'post_status' => 'publish',
+                'posts_per_page' => $batch_size,
+                'offset' => $offset,
+                'orderby' => 'date',
+                'order' => 'DESC'
+            );
+
+            $posts = get_posts($args);
+
+            // 投稿がなくなったら終了
+            if (empty($posts)) {
+                break;
+            }
+
+            foreach ($posts as $post) {
+                $sitemap_type = get_post_meta($post->ID, '_ksus_sitemap_type', true);
+
+                // 除外は含めない
+                if ($sitemap_type === 'exclude') {
+                    continue;
+                }
+
+                // 上限に達したら現在のファイルを保存して新しいファイルを開始
+                if ($current_file_url_count >= $max_urls_per_file) {
+                    $xml .= '</urlset>';
+
+                    // ファイルを保存
+                    if ($file_number === 1) {
+                        // 最初のファイルは番号なし
+                        $this->save_sitemap('sitemap-googlenews.xml', $xml);
+                    } else {
+                        // 2番目以降は -2, -3, -4...
+                        $this->save_sitemap('sitemap-googlenews-' . $file_number . '.xml', $xml);
+                    }
+
+                    $file_number++;
+                    $current_file_url_count = 0;
+                    $xml = $this->get_news_sitemap_xml_header();
+                }
+
+                $xml .= "\t<url>\n";
+                $xml .= "\t\t<loc>" . esc_url(get_permalink($post->ID)) . "</loc>\n";
+                $xml .= "\t\t<news:news>\n";
+                $xml .= "\t\t\t<news:publication>\n";
+                $xml .= "\t\t\t\t<news:name>" . htmlspecialchars(get_bloginfo('name'), ENT_XML1, 'UTF-8') . "</news:name>\n";
+                $xml .= "\t\t\t\t<news:language>" . htmlspecialchars(get_bloginfo('language'), ENT_XML1, 'UTF-8') . "</news:language>\n";
+                $xml .= "\t\t\t</news:publication>\n";
+                $xml .= "\t\t\t<news:publication_date>" . get_post_time('c', false, $post) . "</news:publication_date>\n";
+                $xml .= "\t\t\t<news:title>" . htmlspecialchars($post->post_title, ENT_XML1, 'UTF-8') . "</news:title>\n";
+                $xml .= "\t\t</news:news>\n";
+
+                // 設定に基づいて画像・動画情報を含める
+                $include_images = get_option('ksus_include_images', true);
+                $include_videos = get_option('ksus_include_videos', true);
+
+                if ($include_images) {
+                    $images_xml = $this->get_images_xml($post);
+                    if (!empty($images_xml)) {
+                        $xml .= $images_xml;
+                    }
+                }
+
+                if ($include_videos) {
+                    $videos_xml = $this->get_videos_xml($post);
+                    if (!empty($videos_xml)) {
+                        $xml .= $videos_xml;
+                    }
+                }
+
+                $xml .= "\t</url>\n";
+                $current_file_url_count++;
+                $total_url_count++;
+            }
+
+            $offset += $batch_size;
+        }
+
+        // 最後のファイルを保存
+        if ($current_file_url_count > 0) {
+            $xml .= '</urlset>';
+
+            if ($file_number === 1) {
+                // 最初のファイル（100件以下の場合）は番号なし
+                $this->save_sitemap('sitemap-googlenews.xml', $xml);
+            } else {
+                // 2番目以降のファイルは番号付き
+                $this->save_sitemap('sitemap-googlenews-' . $file_number . '.xml', $xml);
+            }
+        }
+    }
+
+    /**
+     * ニュースサイトマップXMLヘッダーを取得
+     */
+    private function get_news_sitemap_xml_header() {
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ';
         $xml .= 'xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" ';
         $xml .= 'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" ';
         $xml .= 'xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">' . "\n";
+        return $xml;
+    }
 
-        foreach ($posts as $post) {
-            $sitemap_type = get_post_meta($post->ID, '_ksus_sitemap_type', true);
+    /**
+     * 古いニュースサイトマップファイルをクリーンアップ
+     */
+    private function cleanup_old_news_sitemap_files() {
+        $upload_dir = wp_upload_dir();
+        $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
 
-            // 除外は含めない
-            if ($sitemap_type === 'exclude') {
-                continue;
-            }
-
-            $xml .= "\t<url>\n";
-            $xml .= "\t\t<loc>" . esc_url(get_permalink($post->ID)) . "</loc>\n";
-            $xml .= "\t\t<news:news>\n";
-            $xml .= "\t\t\t<news:publication>\n";
-            $xml .= "\t\t\t\t<news:name>" . htmlspecialchars(get_bloginfo('name'), ENT_XML1, 'UTF-8') . "</news:name>\n";
-            $xml .= "\t\t\t\t<news:language>" . htmlspecialchars(get_bloginfo('language'), ENT_XML1, 'UTF-8') . "</news:language>\n";
-            $xml .= "\t\t\t</news:publication>\n";
-            $xml .= "\t\t\t<news:publication_date>" . get_post_time('c', false, $post) . "</news:publication_date>\n";
-            $xml .= "\t\t\t<news:title>" . htmlspecialchars($post->post_title, ENT_XML1, 'UTF-8') . "</news:title>\n";
-            $xml .= "\t\t</news:news>\n";
-
-            // 設定に基づいて画像・動画情報を含める
-            $include_images = get_option('ksus_include_images', true);
-            $include_videos = get_option('ksus_include_videos', true);
-
-            if ($include_images) {
-                $images_xml = $this->get_images_xml($post);
-                if (!empty($images_xml)) {
-                    $xml .= $images_xml;
-                }
-            }
-
-            if ($include_videos) {
-                $videos_xml = $this->get_videos_xml($post);
-                if (!empty($videos_xml)) {
-                    $xml .= $videos_xml;
-                }
-            }
-
-            $xml .= "\t</url>\n";
-            $url_count++;
+        if (!is_dir($sitemap_dir)) {
+            return;
         }
 
-        $xml .= '</urlset>';
+        // 番号付きファイル（-2以降）を削除（.xml と .xml.gz 両方）
+        foreach (array('xml', 'xml.gz') as $ext) {
+            $pattern = $sitemap_dir . 'sitemap-googlenews-*.' . $ext;
+            $files = glob($pattern);
 
-        // URLが1件以上ある場合のみファイルに保存、0件の場合は既存ファイルを削除
-        if ($url_count > 0) {
-            $this->save_sitemap('sitemap-googlenews.xml', $xml);
-        } else {
-            $upload_dir = wp_upload_dir();
-            $file_path = $upload_dir['basedir'] . '/sitemaps/sitemap-googlenews.xml';
-            if (file_exists($file_path)) {
-                unlink($file_path);
+            if ($files) {
+                foreach ($files as $file) {
+                    if (file_exists($file)) {
+                        unlink($file);
+                    }
+                }
             }
         }
     }
@@ -555,6 +836,29 @@ class KSUS_Sitemap_Generator {
     }
 
     /**
+     * ファイル拡張子を取得（GZIP設定に応じて）
+     */
+    private function get_file_extension() {
+        return get_option('ksus_enable_gzip', false) ? '.xml.gz' : '.xml';
+    }
+
+    /**
+     * ファイルが存在するかチェック（.xml と .xml.gz 両方）
+     */
+    private function file_exists_either($sitemap_dir, $base_filename) {
+        $xml_file = $sitemap_dir . $base_filename . '.xml';
+        $gz_file = $sitemap_dir . $base_filename . '.xml.gz';
+
+        if (file_exists($gz_file)) {
+            return $gz_file;
+        } elseif (file_exists($xml_file)) {
+            return $xml_file;
+        }
+
+        return false;
+    }
+
+    /**
      * サイトマップをファイルに保存
      */
     private function save_sitemap($filename, $content) {
@@ -566,15 +870,45 @@ class KSUS_Sitemap_Generator {
             wp_mkdir_p($sitemap_dir);
         }
 
-        $file_path = $sitemap_dir . '/' . $filename;
-        file_put_contents($file_path, $content);
+        $enable_gzip = get_option('ksus_enable_gzip', false);
+
+        if ($enable_gzip) {
+            // GZIP圧縮して保存
+            $file_path = $sitemap_dir . '/' . $filename . '.gz';
+            $gz = gzopen($file_path, 'w9'); // 最高圧縮レベル
+            gzwrite($gz, $content);
+            gzclose($gz);
+
+            // 古いXMLファイルを削除
+            $old_xml = $sitemap_dir . '/' . $filename;
+            if (file_exists($old_xml)) {
+                unlink($old_xml);
+            }
+        } else {
+            // 通常のXMLファイルとして保存
+            $file_path = $sitemap_dir . '/' . $filename;
+            file_put_contents($file_path, $content);
+
+            // 古いGZファイルを削除
+            $old_gz = $sitemap_dir . '/' . $filename . '.gz';
+            if (file_exists($old_gz)) {
+                unlink($old_gz);
+            }
+        }
     }
 
     /**
      * リライトルールを追加
      */
     public function add_rewrite_rules() {
+        // GZIP形式(.xml.gz)のサポート
+        add_rewrite_rule('^sitemap\.xml\.gz$', 'index.php?ksus_sitemap=index', 'top');
+        add_rewrite_rule('^sitemap-([a-zA-Z0-9_-]+-[0-9]+)\.xml\.gz$', 'index.php?ksus_sitemap=$matches[1]', 'top');
+        add_rewrite_rule('^sitemap-([a-zA-Z0-9_-]+)\.xml\.gz$', 'index.php?ksus_sitemap=$matches[1]', 'top');
+
+        // 通常のXML形式
         add_rewrite_rule('^sitemap\.xml$', 'index.php?ksus_sitemap=index', 'top');
+        add_rewrite_rule('^sitemap-([a-zA-Z0-9_-]+-[0-9]+)\.xml$', 'index.php?ksus_sitemap=$matches[1]', 'top');
         add_rewrite_rule('^sitemap-([a-zA-Z0-9_-]+)\.xml$', 'index.php?ksus_sitemap=$matches[1]', 'top');
     }
 
@@ -611,14 +945,27 @@ class KSUS_Sitemap_Generator {
         remove_action('template_redirect', array($this, 'serve_sitemap'));
 
         $upload_dir = wp_upload_dir();
-        $filename = ($sitemap === 'index') ? 'sitemap.xml' : 'sitemap-' . $sitemap . '.xml';
-        $file_path = $upload_dir['basedir'] . '/sitemaps/' . $filename;
+        $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
+        $base_filename = ($sitemap === 'index') ? 'sitemap.xml' : 'sitemap-' . $sitemap . '.xml';
 
-        if (file_exists($file_path)) {
+        // GZIPファイルを優先的にチェック
+        $gz_file = $sitemap_dir . $base_filename . '.gz';
+        $xml_file = $sitemap_dir . $base_filename;
+
+        if (file_exists($gz_file)) {
+            // GZIPファイルを配信
+            status_header(200);
+            header('Content-Type: application/xml; charset=UTF-8');
+            header('Content-Encoding: gzip');
+            header('X-Robots-Tag: noindex, follow', true);
+            readfile($gz_file);
+            exit;
+        } elseif (file_exists($xml_file)) {
+            // 通常のXMLファイルを配信
             status_header(200);
             header('Content-Type: application/xml; charset=UTF-8');
             header('X-Robots-Tag: noindex, follow', true);
-            readfile($file_path);
+            readfile($xml_file);
             exit;
         } else {
             global $wp_query;

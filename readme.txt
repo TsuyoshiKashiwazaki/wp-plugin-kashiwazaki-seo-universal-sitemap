@@ -4,7 +4,7 @@ Tags: seo, sitemap, xml sitemap, google news, image sitemap, video sitemap
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,24 @@ Kashiwazaki SEO Universal Sitemapは、WordPress向けの包括的なサイト�
 4. 投稿編集画面のメタボックス
 
 == Changelog ==
+
+= 1.0.3 =
+* Added: 投稿タイプサイトマップの自動分割機能（50,000件ごと）
+* Added: ニュースサイトマップの自動分割機能（1,000件ごと）
+* Added: GZIP圧縮機能（ファイルサイズ約90-98%削減）
+* Added: タブ形式の管理画面（サイトマップ&設定、統計情報、使い方）
+* Added: ニュースサイトマップセクションの折りたたみ機能
+* Added: HTMLヘッダー出力機能（<link rel="sitemap">）ON/OFF切替可能
+* Added: プラグイン一覧に「設定」リンク
+* Added: 詳細な使い方ガイドとトラブルシューティング情報
+* Added: Google News特別枠表示
+* Changed: 画像・動画情報をON/OFF切替可能に変更
+* Changed: Googleニュースサイトマップを投稿タイプ選択式に変更
+* Changed: 管理画面UI/UXを大幅改善
+* Fixed: GZIP ON/OFF切替時に古い形式のファイルを自動削除
+* Fixed: 無効化された投稿タイプのファイル削除処理（.xml.gz対応）
+* Fixed: インデックスサイトマップのファイル存在チェック（GZIP対応）
+* Fixed: debug.log設定の重複を解消
 
 = 1.0.2 =
 * Fixed: カスタム投稿タイプのサイトマップがインデックスに含まれない問題を修正

@@ -1,94 +1,137 @@
 # Kashiwazaki SEO Universal Sitemap
 
-[![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-blue.svg)](https://wordpress.org/)
-[![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple.svg)](https://php.net/)
-[![License](https://img.shields.io/badge/License-GPL--2.0--or--later-green.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
-[![Version](https://img.shields.io/badge/Version-1.0.2--dev-orange.svg)](https://github.com/TsuyoshiKashiwazaki/wp-plugin-kashiwazaki-seo-universal-sitemap/releases)
+![Version](https://img.shields.io/badge/version-1.0.3-blue.svg)
+![WordPress](https://img.shields.io/badge/WordPress-6.0+-blue.svg)
+![PHP](https://img.shields.io/badge/PHP-8.0+-purple.svg)
+![License](https://img.shields.io/badge/license-GPL--2.0-green.svg)
 
-投稿タイプ別のXMLサイトマップを生成し、ニュースサイトマップ、画像・動画情報の埋め込みにも対応したSEO最適化プラグインです。
-
-> **検索エンジン最適化のための包括的なサイトマップソリューション**
+柏崎剛によるユニバーサルSEOサイトマッププラグイン。投稿タイプ別のサイトマップ、画像・動画サイトマップ、Googleニュースサイトマップに対応。大規模サイト向けの自動分割機能とGZIP圧縮を搭載。
 
 ## 主な機能
 
-- **投稿タイプ別サイトマップ生成** - 投稿、固定ページ、カスタム投稿タイプに対応
-- **ニュースサイトマップ** - Google Newsに最適化されたサイトマップ
-- **画像情報の埋め込み** - 画像検索最適化のための画像情報を投稿タイプ別サイトマップに埋め込み
-- **動画情報の埋め込み** - YouTube・Vimeoの動画情報を投稿タイプ別サイトマップに埋め込み
-- **柔軟な設定** - 各投稿タイプごとに細かく設定可能
-- **自動更新** - コンテンツ更新時に自動的にサイトマップを再生成
-- **投稿レベルのコントロール** - 個別の投稿でサイトマップへの含有を制御可能
+### ✨ コア機能
 
-## クイックスタート
+- **自動分割機能**
+  - 投稿タイプサイトマップ：50,000件ごとに自動分割
+  - Googleニュースサイトマップ：1,000件ごとに自動分割
+  - すべての分割ファイルを自動的にインデックスサイトマップに登録
 
-### インストール
+- **GZIP圧縮対応**
+  - ファイルサイズを約90-98%削減
+  - 管理画面でON/OFF切替可能
+  - Googlebot完全対応
 
-1. プラグインファイルを `/wp-content/plugins/kashiwazaki-seo-universal-sitemap/` ディレクトリにアップロード
-2. WordPress管理画面の「プラグイン」メニューからプラグインを有効化
-3. 「設定」→「Kashiwazaki SEO Universal Sitemap」から設定を行う
+- **画像・動画サイトマップ**
+  - アイキャッチ画像と本文中の画像に対応
+  - YouTube・Vimeo動画に対応
+  - Google画像検索・動画検索最適化
 
-### 基本設定
+- **Googleニュースサイトマップ**
+  - 投稿タイプ選択式
+  - 1,000件で自動分割（Google仕様準拠）
+  - 最新記事優先
 
-1. 管理画面でサイトマップに含める投稿タイプを選択
-2. 各投稿タイプの優先度と更新頻度を設定
-3. 必要に応じてニュースサイトマップ、画像・動画情報の埋め込みを有効化
-4. 設定を保存してサイトマップを生成
+### 🎨 UI/UX
 
-### サイトマップURL
+- **タブ形式の管理画面**
+  - サイトマップ & 設定
+  - 統計情報
+  - 詳細な使い方ガイド
 
-生成されたサイトマップは以下のURLでアクセスできます：
+- **直感的な操作**
+  - ニュースサイトマップセクションの折りたたみ
+  - URLワンクリックコピー
+  - 分割ファイルへの直接リンク
 
-- **インデックスサイトマップ**: `https://yourdomain.com/sitemap.xml`
-- **投稿タイプ別サイトマップ**: `https://yourdomain.com/sitemap-{post_type}.xml`
-  （例: `sitemap-post.xml`、`sitemap-page.xml`）
-  ※ 画像・動画情報は投稿タイプ別サイトマップ内に含まれます
-- **ニュースサイトマップ**: `https://yourdomain.com/sitemap-googlenews.xml`
-  （設定で有効化した投稿タイプのニュース記事が含まれます）
+- **HTMLヘッダー出力**
+  - `<link rel="sitemap">`を自動追加
+  - ON/OFF切替可能
+
+## インストール
+
+1. このリポジトリをダウンロードまたはクローン
+2. `/wp-content/plugins/`ディレクトリにアップロード
+3. WordPressの管理画面でプラグインを有効化
+4. 自動的にサイトマップが生成されます
 
 ## 使い方
 
 ### 基本的な使い方
 
-1. **投稿タイプの設定**: 各投稿タイプをサイトマップに含めるかを選択
-2. **優先度の設定**: 0.0～1.0の範囲で各投稿タイプの優先度を設定
-3. **更新頻度の設定**: always, hourly, daily, weekly, monthly, yearly, neverから選択
-4. **個別記事の除外**: 投稿編集画面のメタボックスで個別にサイトマップから除外可能
+1. プラグインを有効化
+2. `設定` → `パーマリンク設定` → `変更を保存`（リライトルールのフラッシュ）
+3. 管理画面の「Kashiwazaki SEO Universal Sitemap」から設定
+4. インデックスサイトマップURL（`/sitemap.xml`）をGoogle Search Consoleに登録
 
-### ニュースサイトマップ
+### 詳細設定
 
-Google News向けに最適化されたサイトマップを生成します。設定で有効化した投稿タイプの記事が含まれます。
+#### 投稿タイプの設定
+- サイトマップに含める投稿タイプを選択
+- 更新頻度（changefreq）を設定
+- 優先度（priority）を設定（0.0〜1.0）
 
-### 画像情報の埋め込み
+#### 画像・動画情報
+- 画像情報のON/OFF
+- 動画情報のON/OFF
+- GZIP圧縮のON/OFF
+- HTMLヘッダー出力のON/OFF
 
-投稿に含まれる画像（アイキャッチ画像、本文中の画像）を自動的に検出し、投稿タイプ別サイトマップ内に `<image:image>` タグとして埋め込みます。画像検索の最適化に役立ちます。
+#### Googleニュースサイトマップ
+- ニュースに掲載する投稿タイプを選択
+- 自動的に1,000件で分割
 
-### 動画情報の埋め込み
+### 個別投稿の除外
 
-YouTube・Vimeoの動画コンテンツを自動検出し、投稿タイプ別サイトマップ内に `<video:video>` タグとして埋め込みます。動画検索結果への表示を最適化します。
+投稿編集画面の「Kashiwazaki SEO Universal Sitemap」メタボックスから、特定の投稿をサイトマップから除外できます。
 
 ## 技術仕様
 
-### システム要件
+### 自動分割機能
 
-- WordPress: 5.0以上
-- PHP: 7.4以上
-- メモリ: 最低64MB推奨
+**投稿タイプサイトマップ：**
+- 最初の50,000件：`sitemap-post.xml`
+- 次の50,000件：`sitemap-post-2.xml`
+- 以降：`sitemap-post-3.xml`, `sitemap-post-4.xml`...
 
-### 互換性
+**Googleニュースサイトマップ：**
+- 最初の1,000件：`sitemap-googlenews.xml`
+- 次の1,000件：`sitemap-googlenews-2.xml`
+- 以降：`sitemap-googlenews-3.xml`...
 
-- マルチサイト対応
-- 主要なSEOプラグインとの併用可能
-- カスタム投稿タイプ完全対応
+### GZIP圧縮
 
-### パフォーマンス
+- 有効時：すべてのサイトマップを`.xml.gz`形式で保存
+- 無効時：`.xml`形式で保存
+- URL：`.xml`でアクセス可能（透過的に`.xml.gz`を配信）
+- ヘッダー：`Content-Encoding: gzip`
 
-- サイトマップはキャッシュされ、必要時のみ再生成
-- 大量の投稿でも高速に動作
-- リライトルールを使用した効率的なURL処理
+### 自動再生成
+
+サイトマップは以下のタイミングで自動的に再生成されます：
+- 設定保存時
+- 投稿の公開・更新時
+- 投稿の削除時
+
+## 動作環境
+
+- **WordPress**: 6.0以上
+- **PHP**: 8.0以上
+- **MySQL/MariaDB**: 5.7以上
 
 ## 更新履歴
 
 最新の変更内容については [CHANGELOG.md](CHANGELOG.md) をご覧ください。
+
+### v1.0.3 (2025-11-13)
+
+- 自動分割機能追加：投稿50,000件、ニュース1,000件で自動分割
+- GZIP圧縮対応：約90-98%のファイルサイズ削減
+- タブ形式の管理画面：設定/統計/使い方を分離
+- ニュースサイトマップセクションの折りたたみ機能
+- HTMLヘッダー出力機能（ON/OFF切替可能）
+- プラグイン一覧に「設定」リンク追加
+- 詳細な使い方ガイドとトラブルシューティング追加
+- UI/UX全般の大幅改善
 
 ### v1.0.2 (2025-10-23)
 
@@ -111,30 +154,14 @@ YouTube・Vimeoの動画コンテンツを自動検出し、投稿タイプ別�
 
 ## ライセンス
 
-GPL-2.0-or-later
+GPL v2 or later
 
-## サポート・開発者
+## 著者
 
-**開発者**: 柏崎剛 (Tsuyoshi Kashiwazaki)
-**ウェブサイト**: https://www.tsuyoshikashiwazaki.jp/
-**サポート**: プラグインに関するご質問や不具合報告は、開発者ウェブサイトまでお問い合わせください。
-
-## 貢献
-
-プルリクエストを歓迎します。大きな変更の場合は、まずissueを開いて変更内容について議論してください。
+**柏崎剛 (Tsuyoshi Kashiwazaki)**
+- Website: [https://www.tsuyoshikashiwazaki.jp](https://www.tsuyoshikashiwazaki.jp)
+- Profile: [https://www.tsuyoshikashiwazaki.jp/profile/](https://www.tsuyoshikashiwazaki.jp/profile/)
 
 ## サポート
 
-- 不具合報告: [GitHub Issues](https://github.com/TsuyoshiKashiwazaki/wp-plugin-kashiwazaki-seo-universal-sitemap/issues)
-- 機能リクエスト: [GitHub Issues](https://github.com/TsuyoshiKashiwazaki/wp-plugin-kashiwazaki-seo-universal-sitemap/issues)
-- 開発者サイト: https://www.tsuyoshikashiwazaki.jp/
-
----
-
-<div align="center">
-
-**Keywords**: WordPress, SEO, Sitemap, XML Sitemap, Google News, Image Sitemap, Video Sitemap, Search Engine Optimization
-
-Made by [Tsuyoshi Kashiwazaki](https://github.com/TsuyoshiKashiwazaki)
-
-</div>
+問題や機能要望がある場合は、[GitHubのIssues](https://github.com/TsuyoshiKashiwazaki/wp-plugin-kashiwazaki-seo-universal-sitemap/issues)でご報告ください。
