@@ -31,6 +31,7 @@ class KSUS_Admin {
         add_action('update_option_ksus_include_videos', array($this, 'regenerate_on_settings_update'), 10, 2);
         add_action('update_option_ksus_post_type_settings', array($this, 'regenerate_on_settings_update'), 10, 2);
         add_action('update_option_ksus_enable_gzip', array($this, 'regenerate_on_settings_update'), 10, 2);
+        add_filter('pre_update_option_ksus_generation_mode', array($this, 'on_generation_mode_change'), 10, 2);
         add_filter('plugin_action_links_kashiwazaki-seo-universal-sitemap/kashiwazaki-seo-universal-sitemap.php', array($this, 'add_plugin_action_links'));
     }
 
@@ -119,10 +120,16 @@ class KSUS_Admin {
      * 初回サイトマップ生成
      */
     public function maybe_generate_initial_sitemaps() {
+        // 動的モードの場合は静的ファイルを生成しない
+        if (get_option('ksus_generation_mode', 'static') === 'dynamic') {
+            return;
+        }
+
         $upload_dir = wp_upload_dir();
         $sitemap_file = $upload_dir['basedir'] . '/sitemaps/sitemap.xml';
+        $sitemap_file_gz = $upload_dir['basedir'] . '/sitemaps/sitemap.xml.gz';
 
-        if (!file_exists($sitemap_file)) {
+        if (!file_exists($sitemap_file) && !file_exists($sitemap_file_gz)) {
             KSUS_Sitemap_Generator::get_instance()->generate_all_sitemaps();
         }
     }
@@ -516,6 +523,20 @@ class KSUS_Admin {
             'type' => 'boolean',
             'default' => true
         ));
+
+        register_setting('ksus_settings', 'ksus_generation_mode', array(
+            'type' => 'string',
+            'default' => 'static',
+            'sanitize_callback' => array($this, 'sanitize_generation_mode')
+        ));
+    }
+
+    /**
+     * 生成モード設定のサニタイズ
+     */
+    public function sanitize_generation_mode($input) {
+        $valid_modes = array('static', 'dynamic');
+        return in_array($input, $valid_modes) ? $input : 'static';
     }
 
     /**
@@ -606,6 +627,11 @@ class KSUS_Admin {
     public function regenerate_on_settings_update($old_value, $new_value) {
         // 値が変わった場合のみ再生成
         if ($old_value !== $new_value) {
+            // 動的モードの場合は静的ファイルを生成しない
+            if (get_option('ksus_generation_mode', 'static') === 'dynamic') {
+                return;
+            }
+
             KSUS_Sitemap_Generator::get_instance()->generate_all_sitemaps();
 
             // 成功メッセージを追加（管理画面のみ）
@@ -618,5 +644,67 @@ class KSUS_Admin {
                 );
             }
         }
+    }
+
+    /**
+     * 生成モード変更時の処理（pre_update_option フィルター）
+     */
+    public function on_generation_mode_change($new_value, $old_value) {
+        if ($old_value === $new_value) {
+            return $new_value;
+        }
+
+        if ($new_value === 'dynamic') {
+            // 動的モードに切り替え → 静的ファイルを全削除
+            $this->delete_all_sitemap_files();
+
+            if (function_exists('add_settings_error')) {
+                add_settings_error(
+                    'ksus_messages',
+                    'ksus_message',
+                    '動的生成モードに切り替えました。静的ファイルを削除しました。',
+                    'updated'
+                );
+            }
+        } else {
+            // 静的モードに切り替え → サイトマップを生成
+            KSUS_Sitemap_Generator::get_instance()->generate_all_sitemaps();
+
+            if (function_exists('add_settings_error')) {
+                add_settings_error(
+                    'ksus_messages',
+                    'ksus_message',
+                    '静的生成モードに切り替えました。サイトマップを生成しました。',
+                    'updated'
+                );
+            }
+        }
+
+        return $new_value;
+    }
+
+    /**
+     * 全てのサイトマップファイルを削除
+     */
+    private function delete_all_sitemap_files() {
+        $upload_dir = wp_upload_dir();
+        $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
+
+        if (!is_dir($sitemap_dir)) {
+            return;
+        }
+
+        // sitemapsディレクトリ内の全ファイルを削除
+        $files = glob($sitemap_dir . '*');
+        if ($files) {
+            foreach ($files as $file) {
+                if (is_file($file)) {
+                    unlink($file);
+                }
+            }
+        }
+
+        // ディレクトリ自体も削除
+        @rmdir($sitemap_dir);
     }
 }

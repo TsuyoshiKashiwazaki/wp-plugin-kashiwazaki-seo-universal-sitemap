@@ -45,22 +45,26 @@ $urls = KSUS_Admin::get_sitemap_urls();
                     <?php
                     $upload_dir = wp_upload_dir();
                     $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
+                    $is_dynamic_mode = get_option('ksus_generation_mode', 'static') === 'dynamic';
 
-                    // インデックス（.xml と .xml.gz 両方チェック）
-                    $index_exists = file_exists($sitemap_dir . 'sitemap.xml.gz') || file_exists($sitemap_dir . 'sitemap.xml');
+                    // インデックス（動的モードまたはファイル存在）
+                    $index_exists = $is_dynamic_mode || file_exists($sitemap_dir . 'sitemap.xml.gz') || file_exists($sitemap_dir . 'sitemap.xml');
+                    $index_url = home_url('/sitemap.xml');
                     ?>
                     <tr>
                         <td><strong>インデックス</strong></td>
                         <td>
                             <?php if ($index_exists): ?>
-                                <code style="font-size: 12px;"><?php echo esc_html($urls['index']['url']); ?></code>
-                                <button type="button" class="ksus-copy-url" data-url="<?php echo esc_attr($urls['index']['url']); ?>" style="border: none; background: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px; vertical-align: middle; opacity: 0.6;" title="コピー">📋</button>
+                                <code style="font-size: 12px;"><?php echo esc_html($index_url); ?></code>
+                                <button type="button" class="ksus-copy-url" data-url="<?php echo esc_attr($index_url); ?>" style="border: none; background: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px; vertical-align: middle; opacity: 0.6;" title="コピー">📋</button>
                             <?php else: ?>
                                 <code style="font-size: 12px; color: #999;">-</code>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($index_exists):
+                            <?php if ($is_dynamic_mode): ?>
+                                <span style="color: #2271b1;">⚡ 動的生成</span>
+                            <?php elseif ($index_exists):
                                 // 実際に存在するファイル名を取得
                                 $index_filename = file_exists($sitemap_dir . 'sitemap.xml.gz') ? 'sitemap.xml.gz' : 'sitemap.xml';
                                 $count = KSUS_Admin::get_sitemap_url_count($index_filename);
@@ -72,7 +76,7 @@ $urls = KSUS_Admin::get_sitemap_urls();
                         </td>
                         <td>
                             <?php if ($index_exists): ?>
-                                <a href="<?php echo esc_url($urls['index']['url']); ?>" target="_blank" class="button button-small">表示</a>
+                                <a href="<?php echo esc_url($index_url); ?>" target="_blank" class="button button-small">表示</a>
                             <?php else: ?>
                                 <span style="color: #999;">表示不可</span>
                             <?php endif; ?>
@@ -90,14 +94,16 @@ $urls = KSUS_Admin::get_sitemap_urls();
                         // 分割ファイル情報を取得
                         $split_stats = KSUS_Admin::get_split_sitemap_stats($post_type);
                         $has_files = $split_stats['file_count'] > 0;
+                        $post_type_url = home_url('/sitemap-' . $post_type . '.xml');
+                        $is_available = $is_dynamic_mode ? ($is_enabled && $stat['total'] > 0) : $has_files;
                     ?>
                     <tr>
                         <td><?php echo esc_html($stat['label']); ?></td>
                         <td>
-                            <?php if ($has_files && isset($urls[$post_type])): ?>
-                                <code style="font-size: 12px;"><?php echo esc_html($urls[$post_type]['url']); ?></code>
-                                <button type="button" class="ksus-copy-url" data-url="<?php echo esc_attr($urls[$post_type]['url']); ?>" style="border: none; background: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px; vertical-align: middle; opacity: 0.6;" title="コピー">📋</button>
-                                <?php if ($split_stats['file_count'] > 1 && isset($urls[$post_type]['files'])): ?>
+                            <?php if ($is_available): ?>
+                                <code style="font-size: 12px;"><?php echo esc_html($post_type_url); ?></code>
+                                <button type="button" class="ksus-copy-url" data-url="<?php echo esc_attr($post_type_url); ?>" style="border: none; background: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px; vertical-align: middle; opacity: 0.6;" title="コピー">📋</button>
+                                <?php if (!$is_dynamic_mode && $split_stats['file_count'] > 1 && isset($urls[$post_type]['files'])): ?>
                                     <br><small style="color: #666; margin-left: 5px;">
                                         <?php
                                         foreach ($split_stats['files'] as $index => $file_info):
@@ -114,10 +120,10 @@ $urls = KSUS_Admin::get_sitemap_urls();
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($has_files): ?>
+                            <?php if ($is_dynamic_mode && $is_enabled && $stat['total'] > 0): ?>
+                                <span style="color: #2271b1;">⚡ 動的生成</span>
+                            <?php elseif ($has_files): ?>
                                 <span style="color: #46b450;">✓ 生成済み (<?php echo number_format($split_stats['total_urls']); ?>件<?php if ($split_stats['file_count'] > 1): echo ' / ' . $split_stats['file_count'] . 'ファイル'; endif; ?>)</span>
-                            <?php elseif ($is_enabled && $stat['total'] == 0): ?>
-                                <span style="color: #999;">対象が見つかりません</span>
                             <?php elseif (!$is_enabled): ?>
                                 <span style="color: #999;">無効</span>
                             <?php else: ?>
@@ -125,8 +131,8 @@ $urls = KSUS_Admin::get_sitemap_urls();
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($has_files && isset($urls[$post_type])): ?>
-                                <a href="<?php echo esc_url($urls[$post_type]['url']); ?>" target="_blank" class="button button-small">表示</a>
+                            <?php if ($is_available): ?>
+                                <a href="<?php echo esc_url($post_type_url); ?>" target="_blank" class="button button-small">表示</a>
                             <?php else: ?>
                                 <span style="color: #999;">表示不可</span>
                             <?php endif; ?>
@@ -147,14 +153,16 @@ $urls = KSUS_Admin::get_sitemap_urls();
                     // 分割ファイル情報を取得
                     $news_split_stats = KSUS_Admin::get_split_sitemap_stats('googlenews');
                     $news_has_files = $news_split_stats['file_count'] > 0;
+                    $news_url = home_url('/sitemap-googlenews.xml');
+                    $news_is_available = $is_dynamic_mode ? !empty($news_post_types) : $news_has_files;
                     ?>
                     <tr style="background: #f0f8ff;">
                         <td style="padding-left: 20px;"><strong>Google News</strong></td>
                         <td>
-                            <?php if ($news_has_files && isset($urls['googlenews'])): ?>
-                                <code style="font-size: 12px;"><?php echo esc_html($urls['googlenews']['url']); ?></code>
-                                <button type="button" class="ksus-copy-url" data-url="<?php echo esc_attr($urls['googlenews']['url']); ?>" style="border: none; background: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px; vertical-align: middle; opacity: 0.6;" title="コピー">📋</button>
-                                <?php if ($news_split_stats['file_count'] > 1 && isset($urls['googlenews']['files'])): ?>
+                            <?php if ($news_is_available): ?>
+                                <code style="font-size: 12px;"><?php echo esc_html($news_url); ?></code>
+                                <button type="button" class="ksus-copy-url" data-url="<?php echo esc_attr($news_url); ?>" style="border: none; background: none; cursor: pointer; font-size: 12px; padding: 0; margin-left: 5px; vertical-align: middle; opacity: 0.6;" title="コピー">📋</button>
+                                <?php if (!$is_dynamic_mode && $news_split_stats['file_count'] > 1 && isset($urls['googlenews']['files'])): ?>
                                     <br><small style="color: #666; margin-left: 5px;">
                                         <?php
                                         foreach ($news_split_stats['files'] as $index => $file_info):
@@ -171,7 +179,9 @@ $urls = KSUS_Admin::get_sitemap_urls();
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($news_has_files): ?>
+                            <?php if ($is_dynamic_mode && !empty($news_post_types)): ?>
+                                <span style="color: #2271b1;">⚡ 動的生成</span>
+                            <?php elseif ($news_has_files): ?>
                                 <span style="color: #46b450;">✓ 生成済み (<?php echo number_format($news_split_stats['total_urls']); ?>件<?php if ($news_split_stats['file_count'] > 1): echo ' / ' . $news_split_stats['file_count'] . 'ファイル'; endif; ?>)</span>
                             <?php elseif (empty($news_post_types)): ?>
                                 <span style="color: #999;">無効</span>
@@ -180,8 +190,8 @@ $urls = KSUS_Admin::get_sitemap_urls();
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($news_has_files && isset($urls['googlenews'])): ?>
-                                <a href="<?php echo esc_url($urls['googlenews']['url']); ?>" target="_blank" class="button button-small">表示</a>
+                            <?php if ($news_is_available): ?>
+                                <a href="<?php echo esc_url($news_url); ?>" target="_blank" class="button button-small">表示</a>
                             <?php else: ?>
                                 <span style="color: #999;">表示不可</span>
                             <?php endif; ?>
@@ -190,10 +200,14 @@ $urls = KSUS_Admin::get_sitemap_urls();
                 </tbody>
             </table>
             <div style="margin-top: 15px;">
+                <?php if (!$is_dynamic_mode): ?>
                 <button type="button" id="ksus-regenerate-btn" class="button button-secondary">
                     <span class="dashicons dashicons-update" style="margin-top: 3px;"></span> サイトマップを再生成
                 </button>
                 <div id="ksus-regenerate-message" style="margin-top: 10px;"></div>
+                <?php else: ?>
+                <p style="color: #666; margin: 0;"><em>動的生成モードでは再生成ボタンは不要です。サイトマップはリクエスト時に自動生成されます。</em></p>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -273,9 +287,27 @@ $urls = KSUS_Admin::get_sitemap_urls();
                     </tbody>
                 </table>
 
-                <h3 style="margin-top: 30px;">通常サイトマップ - 画像・動画</h3>
+                <h3 style="margin-top: 30px;">通常サイトマップ - 生成設定</h3>
                 <table class="widefat striped">
                     <tbody>
+                        <tr>
+                            <td><strong>生成モード</strong></td>
+                            <td>
+                                <?php $generation_mode = get_option('ksus_generation_mode', 'static'); ?>
+                                <label style="margin-right: 20px;">
+                                    <input type="radio" name="ksus_generation_mode" value="static" <?php checked($generation_mode, 'static'); ?>>
+                                    静的生成（ファイル保存）
+                                </label>
+                                <label>
+                                    <input type="radio" name="ksus_generation_mode" value="dynamic" <?php checked($generation_mode, 'dynamic'); ?>>
+                                    動的生成（リクエスト時に生成）
+                                </label>
+                                <p style="margin: 5px 0 0 0; color: #666; font-size: 12px;">
+                                    <strong>静的生成：</strong> ファイルに保存。高速だが、投稿変更時に再生成が必要。<br>
+                                    <strong>動的生成：</strong> 常に最新の状態を返す。再生成不要だが、大量の投稿がある場合は負荷が高い。
+                                </p>
+                            </td>
+                        </tr>
                         <tr>
                             <td><strong>画像情報</strong></td>
                             <td>

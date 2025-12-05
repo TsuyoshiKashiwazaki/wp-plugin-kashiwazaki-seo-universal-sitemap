@@ -4,7 +4,7 @@ Tags: seo, sitemap, xml sitemap, google news, image sitemap, video sitemap
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,13 @@ Kashiwazaki SEO Universal Sitemapは、WordPress向けの包括的なサイト�
 4. 投稿編集画面のメタボックス
 
 == Changelog ==
+
+= 1.0.4 =
+* Added: 動的/静的生成モードの選択機能
+* Added: 動的モード - リクエスト時にDBから直接生成、ファイル不要
+* Added: 動的モードへの切り替え時に静的ファイルを自動削除
+* Added: 投稿0件時に不要なサイトマップファイルを自動削除
+* Changed: 管理画面で動的モード時の表示を最適化
 
 = 1.0.3 =
 * Added: 投稿タイプサイトマップの自動分割機能（50,000件ごと）
