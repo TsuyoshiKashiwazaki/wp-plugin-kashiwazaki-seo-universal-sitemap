@@ -1,6 +1,6 @@
 # Kashiwazaki SEO Universal Sitemap
 
-![Version](https://img.shields.io/badge/version-1.0.3-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.4-blue.svg)
 ![WordPress](https://img.shields.io/badge/WordPress-6.0+-blue.svg)
 ![PHP](https://img.shields.io/badge/PHP-8.0+-purple.svg)
 ![License](https://img.shields.io/badge/license-GPL--2.0-green.svg)
@@ -121,6 +121,14 @@
 ## 更新履歴
 
 最新の変更内容については [CHANGELOG.md](CHANGELOG.md) をご覧ください。
+
+### v1.0.4 (2025-12-05)
+
+- 動的/静的生成モードの選択機能を追加
+- 動的モード：リクエスト時にDBから直接生成、ファイル不要
+- 動的モードへの切り替え時に静的ファイルを自動削除
+- 投稿0件時に不要なサイトマップファイルを自動削除
+- 管理画面で動的モード時の表示を最適化
 
 ### v1.0.3 (2025-11-13)
 

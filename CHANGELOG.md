@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-12-05
+
+### Added
+- 動的/静的生成モードの選択機能
+- 動的モード：リクエスト時にDBから直接生成、ファイル不要
+- 動的モードへの切り替え時に静的ファイルを自動削除
+- 投稿0件時に不要なサイトマップファイルを自動削除
+
+### Changed
+- 管理画面で動的モード時の表示を最適化（⚡ 動的生成表示、再生成ボタン非表示）
+
 ## [1.0.3] - 2025-11-13
 
 ### Added

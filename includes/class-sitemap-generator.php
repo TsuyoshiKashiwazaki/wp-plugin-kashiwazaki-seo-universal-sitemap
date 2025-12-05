@@ -335,6 +335,9 @@ class KSUS_Sitemap_Generator {
                 // 2番目以降のファイルは番号付き
                 $this->save_sitemap('sitemap-' . $post_type . '-' . $file_number . '.xml', $xml);
             }
+        } elseif ($total_url_count === 0) {
+            // 該当する投稿が0件の場合、既存のサイトマップファイルを削除
+            $this->delete_sitemap_files($post_type);
         }
     }
 
@@ -373,6 +376,29 @@ class KSUS_Sitemap_Generator {
                 }
             }
         }
+    }
+
+    /**
+     * 投稿タイプのサイトマップファイルを全て削除
+     */
+    private function delete_sitemap_files($post_type) {
+        $upload_dir = wp_upload_dir();
+        $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
+
+        if (!is_dir($sitemap_dir)) {
+            return;
+        }
+
+        // 基本ファイル（番号なし）を削除
+        foreach (array('xml', 'xml.gz') as $ext) {
+            $file = $sitemap_dir . 'sitemap-' . $post_type . '.' . $ext;
+            if (file_exists($file)) {
+                unlink($file);
+            }
+        }
+
+        // 番号付きファイルも削除
+        $this->cleanup_old_sitemap_files($post_type);
     }
 
     /**
@@ -501,6 +527,9 @@ class KSUS_Sitemap_Generator {
                 // 2番目以降のファイルは番号付き
                 $this->save_sitemap('sitemap-googlenews-' . $file_number . '.xml', $xml);
             }
+        } elseif ($total_url_count === 0) {
+            // 該当する投稿が0件の場合、既存のニュースサイトマップファイルを削除
+            $this->delete_news_sitemap_files();
         }
     }
 
@@ -540,6 +569,29 @@ class KSUS_Sitemap_Generator {
                 }
             }
         }
+    }
+
+    /**
+     * ニュースサイトマップファイルを全て削除
+     */
+    private function delete_news_sitemap_files() {
+        $upload_dir = wp_upload_dir();
+        $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
+
+        if (!is_dir($sitemap_dir)) {
+            return;
+        }
+
+        // 基本ファイル（番号なし）を削除
+        foreach (array('xml', 'xml.gz') as $ext) {
+            $file = $sitemap_dir . 'sitemap-googlenews.' . $ext;
+            if (file_exists($file)) {
+                unlink($file);
+            }
+        }
+
+        // 番号付きファイルも削除
+        $this->cleanup_old_news_sitemap_files();
     }
 
     /**
@@ -944,6 +996,15 @@ class KSUS_Sitemap_Generator {
         // リダイレクトループを防ぐ
         remove_action('template_redirect', array($this, 'serve_sitemap'));
 
+        $generation_mode = get_option('ksus_generation_mode', 'static');
+
+        // 動的生成モード
+        if ($generation_mode === 'dynamic') {
+            $this->serve_dynamic_sitemap($sitemap);
+            return;
+        }
+
+        // 静的生成モード（従来の動作）
         $upload_dir = wp_upload_dir();
         $sitemap_dir = $upload_dir['basedir'] . '/sitemaps/';
         $base_filename = ($sitemap === 'index') ? 'sitemap.xml' : 'sitemap-' . $sitemap . '.xml';
@@ -975,9 +1036,243 @@ class KSUS_Sitemap_Generator {
     }
 
     /**
+     * 動的にサイトマップを生成して配信
+     */
+    private function serve_dynamic_sitemap($sitemap) {
+        $xml = '';
+
+        if ($sitemap === 'index') {
+            $xml = $this->generate_dynamic_index_sitemap();
+        } elseif ($sitemap === 'googlenews') {
+            $xml = $this->generate_dynamic_news_sitemap();
+        } elseif (preg_match('/^googlenews-(\d+)$/', $sitemap, $matches)) {
+            // 動的モードでは分割不要（全て1ファイルで返す）
+            $xml = $this->generate_dynamic_news_sitemap();
+        } elseif (preg_match('/^([a-zA-Z0-9_-]+)-(\d+)$/', $sitemap, $matches)) {
+            // 分割ファイルリクエスト（動的モードでは分割不要）
+            $post_type = $matches[1];
+            $xml = $this->generate_dynamic_post_type_sitemap($post_type);
+        } else {
+            // 投稿タイプサイトマップ
+            $xml = $this->generate_dynamic_post_type_sitemap($sitemap);
+        }
+
+        if (empty($xml)) {
+            global $wp_query;
+            $wp_query->set_404();
+            status_header(404);
+            return;
+        }
+
+        status_header(200);
+        header('Content-Type: application/xml; charset=UTF-8');
+        header('X-Robots-Tag: noindex, follow', true);
+        echo $xml;
+        exit;
+    }
+
+    /**
+     * 動的にインデックスサイトマップを生成
+     */
+    private function generate_dynamic_index_sitemap() {
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+
+        $home_url = home_url('/');
+        $lastmod = date('c', current_time('timestamp'));
+
+        // 投稿タイプ別サイトマップ
+        $post_types = $this->get_allowed_post_types();
+        $enabled_post_types = get_option('ksus_enabled_post_types', false);
+
+        if ($enabled_post_types === false) {
+            $enabled_post_types = $post_types;
+        }
+
+        foreach ($post_types as $post_type) {
+            if (in_array($post_type, $enabled_post_types)) {
+                // 該当する投稿があるか確認
+                $count = $this->count_posts_for_sitemap($post_type);
+                if ($count > 0) {
+                    $xml .= "\t<sitemap>\n";
+                    $xml .= "\t\t<loc>" . esc_url($home_url . 'sitemap-' . $post_type . '.xml') . "</loc>\n";
+                    $xml .= "\t\t<lastmod>" . $lastmod . "</lastmod>\n";
+                    $xml .= "\t</sitemap>\n";
+                }
+            }
+        }
+
+        // ニュースサイトマップ
+        if ($this->has_news_posts()) {
+            $xml .= "\t<sitemap>\n";
+            $xml .= "\t\t<loc>" . esc_url($home_url . 'sitemap-googlenews.xml') . "</loc>\n";
+            $xml .= "\t\t<lastmod>" . $lastmod . "</lastmod>\n";
+            $xml .= "\t</sitemap>\n";
+        }
+
+        $xml .= '</sitemapindex>';
+
+        return $xml;
+    }
+
+    /**
+     * 動的に投稿タイプサイトマップを生成
+     */
+    private function generate_dynamic_post_type_sitemap($post_type) {
+        // 投稿タイプが有効か確認
+        $enabled_post_types = get_option('ksus_enabled_post_types', false);
+        $all_post_types = $this->get_allowed_post_types();
+
+        if ($enabled_post_types === false) {
+            $enabled_post_types = $all_post_types;
+        }
+
+        if (!in_array($post_type, $enabled_post_types)) {
+            return '';
+        }
+
+        $xml = $this->get_sitemap_xml_header();
+
+        $args = array(
+            'post_type' => $post_type,
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'orderby' => 'ID',
+            'order' => 'ASC'
+        );
+
+        $posts = get_posts($args);
+
+        foreach ($posts as $post) {
+            $sitemap_type = get_post_meta($post->ID, '_ksus_sitemap_type', true);
+
+            if ($sitemap_type === 'exclude') {
+                continue;
+            }
+
+            $xml .= "\t<url>\n";
+            $xml .= "\t\t<loc>" . esc_url(get_permalink($post->ID)) . "</loc>\n";
+            $xml .= "\t\t<lastmod>" . get_post_modified_time('c', false, $post) . "</lastmod>\n";
+            $xml .= "\t\t<changefreq>" . $this->get_change_frequency($post_type) . "</changefreq>\n";
+            $xml .= "\t\t<priority>" . $this->get_priority($post_type) . "</priority>\n";
+
+            $include_images = get_option('ksus_include_images', true);
+            $include_videos = get_option('ksus_include_videos', true);
+
+            if ($include_images) {
+                $images_xml = $this->get_images_xml($post);
+                if (!empty($images_xml)) {
+                    $xml .= $images_xml;
+                }
+            }
+
+            if ($include_videos) {
+                $videos_xml = $this->get_videos_xml($post);
+                if (!empty($videos_xml)) {
+                    $xml .= $videos_xml;
+                }
+            }
+
+            $xml .= "\t</url>\n";
+        }
+
+        $xml .= '</urlset>';
+
+        return $xml;
+    }
+
+    /**
+     * 動的にニュースサイトマップを生成
+     */
+    private function generate_dynamic_news_sitemap() {
+        $news_post_types = get_option('ksus_news_post_types', array());
+
+        if (empty($news_post_types)) {
+            return '';
+        }
+
+        $xml = $this->get_news_sitemap_xml_header();
+
+        $args = array(
+            'post_type' => $news_post_types,
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'orderby' => 'date',
+            'order' => 'DESC'
+        );
+
+        $posts = get_posts($args);
+
+        foreach ($posts as $post) {
+            $sitemap_type = get_post_meta($post->ID, '_ksus_sitemap_type', true);
+
+            if ($sitemap_type === 'exclude') {
+                continue;
+            }
+
+            $xml .= "\t<url>\n";
+            $xml .= "\t\t<loc>" . esc_url(get_permalink($post->ID)) . "</loc>\n";
+            $xml .= "\t\t<news:news>\n";
+            $xml .= "\t\t\t<news:publication>\n";
+            $xml .= "\t\t\t\t<news:name>" . htmlspecialchars(get_bloginfo('name'), ENT_XML1, 'UTF-8') . "</news:name>\n";
+            $xml .= "\t\t\t\t<news:language>" . htmlspecialchars(get_bloginfo('language'), ENT_XML1, 'UTF-8') . "</news:language>\n";
+            $xml .= "\t\t\t</news:publication>\n";
+            $xml .= "\t\t\t<news:publication_date>" . get_post_time('c', false, $post) . "</news:publication_date>\n";
+            $xml .= "\t\t\t<news:title>" . htmlspecialchars($post->post_title, ENT_XML1, 'UTF-8') . "</news:title>\n";
+            $xml .= "\t\t</news:news>\n";
+
+            $include_images = get_option('ksus_include_images', true);
+            $include_videos = get_option('ksus_include_videos', true);
+
+            if ($include_images) {
+                $images_xml = $this->get_images_xml($post);
+                if (!empty($images_xml)) {
+                    $xml .= $images_xml;
+                }
+            }
+
+            if ($include_videos) {
+                $videos_xml = $this->get_videos_xml($post);
+                if (!empty($videos_xml)) {
+                    $xml .= $videos_xml;
+                }
+            }
+
+            $xml .= "\t</url>\n";
+        }
+
+        $xml .= '</urlset>';
+
+        return $xml;
+    }
+
+    /**
+     * サイトマップ用の投稿数をカウント
+     */
+    private function count_posts_for_sitemap($post_type) {
+        global $wpdb;
+
+        $count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(p.ID) FROM {$wpdb->posts} p
+            LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_ksus_sitemap_type'
+            WHERE p.post_type = %s
+            AND p.post_status = 'publish'
+            AND (pm.meta_value IS NULL OR pm.meta_value != 'exclude')",
+            $post_type
+        ));
+
+        return (int) $count;
+    }
+
+    /**
      * 投稿保存時にサイトマップを再生成（条件付き）
      */
     public function maybe_regenerate_sitemaps($post_id) {
+        // 動的モードの場合は静的ファイルを生成しない
+        if (get_option('ksus_generation_mode', 'static') === 'dynamic') {
+            return;
+        }
+
         if (wp_is_post_revision($post_id) || wp_is_post_autosave($post_id)) {
             return;
         }
