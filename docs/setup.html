@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>インストール・初期設定 - Kashiwazaki SEO Universal Sitemap マニュアル</title>
+    <link rel="stylesheet" href="css/style.css?v=1">
+</head>
+<body>
+<button class="hamburger-btn" aria-label="メニュー">&#9776;</button>
+
+<nav class="sidebar">
+    <div class="sidebar-header">
+        <h2 style="color:#fff;">Universal Sitemap</h2>
+        <span class="version">v1.0.4</span>
+        <img src="images/main-visual.png" alt="" style="width:100%;border-radius:4px;margin-top:8px;">
+    </div>
+    <ul>
+        <li><a href="index.html">概要</a></li>
+        <li class="active"><a href="setup.html">インストール・初期設定</a></li>
+        <li><a href="sitemap-settings.html">詳細設定</a></li>
+        <li><a href="troubleshooting.html">トラブルシューティング</a></li>
+    </ul>
+</nav>
+
+<main class="content">
+    <h1>インストール・初期設定</h1>
+    <p class="lead">Kashiwazaki SEO Universal Sitemap のインストール方法と、サイトマップ生成に必要な基本設定を説明します。</p>
+
+    <h2>インストール手順</h2>
+
+    <div class="step">
+        <span class="step-number">1</span>
+        <div class="step-body">
+            <p>WordPress管理画面から <strong>プラグイン &gt; 新規追加</strong> に移動し、「Kashiwazaki SEO Universal Sitemap」を検索します。または、プラグインのZIPファイルを <strong>プラグイン &gt; 新規追加 &gt; プラグインのアップロード</strong> からアップロードします。</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <span class="step-number">2</span>
+        <div class="step-body">
+            <p>「今すぐインストール」をクリックし、インストール完了後「有効化」をクリックします。</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <span class="step-number">3</span>
+        <div class="step-body">
+            <p>管理画面の左メニューに「Kashiwazaki SEO Universal Sitemap」が追加されます。クリックして設定画面を開きます。</p>
+        </div>
+    </div>
+
+    <figure class="screenshot">
+        <img src="images/screenshots/00-menu-location.png" alt="管理画面メニューの位置" class="lightbox-trigger">
+        <figcaption>管理画面の左メニューにプラグインが追加されます</figcaption>
+    </figure>
+
+    <div class="callout callout-tip">
+        <div class="callout-title">ヒント</div>
+        <p>有効化直後から、デフォルト設定でサイトマップの生成が開始されます。必要に応じて以下の設定を調整してください。</p>
+    </div>
+
+    <h2>基本設定</h2>
+
+    <h3>生成モード</h3>
+    <p>サイトマップの生成モードを選択します。サイトの規模やサーバー環境に応じて最適なモードを選んでください。</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:35%;">モード</th>
+                <th>説明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>静的生成</td>
+                <td>サイトマップをXMLファイルとしてサーバーに保存します。アクセス時のサーバー負荷が最小です。大規模サイトに推奨します。</td>
+            </tr>
+            <tr>
+                <td>動的生成</td>
+                <td>リクエスト時にサイトマップをリアルタイムで生成します。常に最新の状態が反映されますが、サーバー負荷がやや高くなります。</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="callout callout-note">
+        <div class="callout-title">補足</div>
+        <p>静的生成モードでも、コンテンツの公開・更新・削除時にサイトマップは自動的に再生成されます。通常の運用では静的生成モードが推奨されます。</p>
+    </div>
+
+    <h3>サイトマップタイプ</h3>
+    <p>生成するサイトマップの種類を選択します。複数のタイプを同時に有効にできます。</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:35%;">タイプ</th>
+                <th>説明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>投稿タイプ別サイトマップ</td>
+                <td>投稿・固定ページ・カスタム投稿タイプごとにサイトマップを生成します。</td>
+            </tr>
+            <tr>
+                <td>画像サイトマップ</td>
+                <td>投稿内の画像情報を含むサイトマップを生成し、画像検索での露出を向上させます。</td>
+            </tr>
+            <tr>
+                <td>動画サイトマップ</td>
+                <td>動画コンテンツのメタデータを含むサイトマップを生成します。</td>
+            </tr>
+            <tr>
+                <td>ニュースサイトマップ</td>
+                <td>Google News向けのサイトマップを生成します。直近48時間以内の記事が対象です。</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>GZIP圧縮</h3>
+    <p>サイトマップのGZIP圧縮を有効にすると、ファイルサイズを大幅に削減できます。大規模サイトでは帯域幅の節約とレスポンス速度の向上に効果があります。</p>
+
+    <div class="callout callout-warning">
+        <div class="callout-title">注意</div>
+        <p>GZIP圧縮を有効にする場合、サーバーがGZIP配信に対応していることを確認してください。多くのモダンなホスティング環境ではデフォルトで対応しています。</p>
+    </div>
+
+    <h3>自動分割</h3>
+    <p>サイトマップ内のURL数が50,000件を超えると、XMLサイトマップの仕様に従って自動的にサイトマップインデックスファイルと複数のサイトマップファイルに分割されます。この設定は自動で行われ、手動での操作は不要です。</p>
+
+    <h3>リライトルール</h3>
+    <p>プラグインはWordPressのリライトルールを自動的に登録し、クリーンなURLでサイトマップにアクセスできるようにします。例えば <code>https://example.com/sitemap.xml</code> のようなURLでアクセス可能になります。</p>
+
+    <div class="callout callout-tip">
+        <div class="callout-title">ヒント</div>
+        <p>リライトルールが正しく動作しない場合は、<strong>設定 &gt; パーマリンク設定</strong> で「変更を保存」をクリックしてリライトルールを再生成してください。</p>
+    </div>
+
+    <nav class="page-nav">
+        <a href="index.html" class="prev">&laquo; 概要</a>
+        <a href="sitemap-settings.html" class="next">詳細設定 &raquo;</a>
+    </nav>
+
+    <footer class="manual-footer">
+        <p>作者: <a href="https://www.tsuyoshikashiwazaki.jp/profile/" target="_blank" rel="noopener">柏崎剛（Tsuyoshi Kashiwazaki）</a></p>
+        <p>プラグイン: Kashiwazaki SEO Universal Sitemap v1.0.4</p>
+    </footer>
+</main>
+
+<div class="lightbox"></div>
+<script src="js/manual.js?v=1"></script>
+</body>
+</html>

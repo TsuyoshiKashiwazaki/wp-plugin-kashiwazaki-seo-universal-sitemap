@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>トラブルシューティング - Kashiwazaki SEO Universal Sitemap マニュアル</title>
+    <link rel="stylesheet" href="css/style.css?v=1">
+</head>
+<body>
+<button class="hamburger-btn" aria-label="メニュー">&#9776;</button>
+
+<nav class="sidebar">
+    <div class="sidebar-header">
+        <h2 style="color:#fff;">Universal Sitemap</h2>
+        <span class="version">v1.0.4</span>
+        <img src="images/main-visual.png" alt="" style="width:100%;border-radius:4px;margin-top:8px;">
+    </div>
+    <ul>
+        <li><a href="index.html">概要</a></li>
+        <li><a href="setup.html">インストール・初期設定</a></li>
+        <li><a href="sitemap-settings.html">詳細設定</a></li>
+        <li class="active"><a href="troubleshooting.html">トラブルシューティング</a></li>
+    </ul>
+</nav>
+
+<main class="content">
+    <h1>トラブルシューティング</h1>
+    <p class="lead">Kashiwazaki SEO Universal Sitemap の使用中に発生しうる問題と対処法、動作要件、技術仕様について解説します。</p>
+
+    <h2>よくある問題と対処法</h2>
+
+    <h3>サイトマップが生成されない</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width:35%;">考えられる原因</th>
+                <th>対処法</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>プラグインが有効化されていない</td>
+                <td>管理画面の「プラグイン」一覧で、本プラグインが有効になっていることを確認してください。</td>
+            </tr>
+            <tr>
+                <td>書き込み権限が不足している</td>
+                <td>静的生成モードの場合、サイトマップファイルの書き込み先ディレクトリにPHPからの書き込み権限があることを確認してください。</td>
+            </tr>
+            <tr>
+                <td>公開済みの投稿がない</td>
+                <td>サイトマップに含まれるのは公開状態（publish）の投稿のみです。下書きや非公開の投稿は対象外です。</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>サイトマップURLにアクセスできない（404エラー）</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width:35%;">考えられる原因</th>
+                <th>対処法</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>リライトルールが未登録</td>
+                <td><strong>設定 &gt; パーマリンク設定</strong> で「変更を保存」をクリックし、リライトルールを再生成してください。</td>
+            </tr>
+            <tr>
+                <td>.htaccessが書き込み不可</td>
+                <td>Apache環境の場合、.htaccessファイルがWebサーバーから書き込み可能であることを確認してください。</td>
+            </tr>
+            <tr>
+                <td>他のプラグインとの競合</td>
+                <td>他のサイトマッププラグインが同じURLパスを使用している可能性があります。競合プラグインを無効にしてください。</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>サイトマップが更新されない</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width:35%;">考えられる原因</th>
+                <th>対処法</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>キャッシュプラグインが古いサイトマップを配信している</td>
+                <td>キャッシュプラグインのキャッシュをクリアしてください。サイトマップURLをキャッシュ除外に設定することを推奨します。</td>
+            </tr>
+            <tr>
+                <td>CDNがキャッシュしている</td>
+                <td>CDN（Cloudflareなど）を使用している場合、サイトマップURLのキャッシュをパージしてください。</td>
+            </tr>
+            <tr>
+                <td>静的ファイルの書き込みに失敗している</td>
+                <td>管理画面からサイトマップの手動再生成を実行し、エラーメッセージを確認してください。</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>GZIP圧縮が動作しない</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width:35%;">考えられる原因</th>
+                <th>対処法</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>zlib拡張が無効</td>
+                <td>PHPのzlib拡張が有効になっていることを確認してください。<code>phpinfo()</code> で確認できます。</td>
+            </tr>
+            <tr>
+                <td>サーバーの設定で圧縮が制限されている</td>
+                <td>ホスティング会社に問い合わせて、GZIP圧縮の利用が可能か確認してください。</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="callout callout-tip">
+        <div class="callout-title">ヒント</div>
+        <p>問題が解決しない場合は、一度プラグインを無効化してから再有効化してみてください。設定値はデータベースに保持されるため、再有効化後も設定は維持されます。</p>
+    </div>
+
+    <h2>動作要件</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:35%;">項目</th>
+                <th>要件</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>WordPress</td>
+                <td>5.0 以上</td>
+            </tr>
+            <tr>
+                <td>PHP</td>
+                <td>7.4 以上</td>
+            </tr>
+            <tr>
+                <td>対応ブラウザ</td>
+                <td>Chrome、Firefox、Safari、Edge（最新版）</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>技術仕様</h2>
+
+    <ul>
+        <li><strong>データ保存:</strong> wp_options (ksus_*系8キー)</li>
+        <li><strong>カスタムテーブル:</strong> なし</li>
+        <li><strong>外部通信:</strong> なし</li>
+        <li><strong>Cronイベント:</strong> なし（コンテンツ更新時に再生成）</li>
+        <li><strong>メール送信:</strong> なし</li>
+        <li><strong>セキュリティ:</strong> nonce検証、manage_options権限チェック、入出力サニタイズ</li>
+    </ul>
+
+    <h2>アーキテクチャ</h2>
+
+    <p>Kashiwazaki SEO Universal Sitemap は以下のコンポーネントで構成されています。</p>
+
+    <h3>サイトマップ生成フロー</h3>
+
+    <div class="step">
+        <span class="step-number">1</span>
+        <div class="step-body">
+            <p>コンテンツの公開・更新・削除をトリガーとして、サイトマップ再生成プロセスが開始されます。</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <span class="step-number">2</span>
+        <div class="step-body">
+            <p>有効な投稿タイプの公開済みコンテンツをデータベースから取得し、各サイトマップタイプ（標準・画像・動画・ニュース）ごとにXMLを構築します。</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <span class="step-number">3</span>
+        <div class="step-body">
+            <p>URL数が50,000件を超える場合、自動的にサイトマップインデックスと分割サイトマップを生成します。</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <span class="step-number">4</span>
+        <div class="step-body">
+            <p>静的モードではファイルとして保存、動的モードではリクエスト時にリアルタイム出力します。GZIP圧縮が有効な場合は圧縮版も同時に生成します。</p>
+        </div>
+    </div>
+
+    <h3>フロントエンド</h3>
+    <ul>
+        <li><code>&lt;link rel="sitemap"&gt;</code> を <code>wp_head</code> 経由で出力</li>
+        <li>リライトルールによるクリーンなサイトマップURL</li>
+        <li>JavaScriptは管理画面のAJAX処理のみ使用</li>
+    </ul>
+
+    <h3>バックエンド</h3>
+    <ul>
+        <li>設定データは <code>wp_options</code> テーブルに <code>ksus_*</code> 系8キーで保存</li>
+        <li>カスタムテーブルは使用せず、WordPress標準のデータ構造のみを利用</li>
+        <li>管理画面は <code>manage_options</code> 権限のユーザーのみアクセス可能</li>
+        <li>すべてのフォーム送信とAJAXリクエストに nonce 検証を実施</li>
+    </ul>
+
+    <div class="callout callout-note">
+        <div class="callout-title">補足</div>
+        <p>カスタムテーブルやCronイベントは使用しないため、プラグインの削除時にデータベースに不要なデータが残ることはありません。<code>wp_options</code> の設定値のみが削除対象です。</p>
+    </div>
+
+    <nav class="page-nav">
+        <a href="sitemap-settings.html" class="prev">&laquo; 詳細設定</a>
+        <span></span>
+    </nav>
+
+    <footer class="manual-footer">
+        <p>作者: <a href="https://www.tsuyoshikashiwazaki.jp/profile/" target="_blank" rel="noopener">柏崎剛（Tsuyoshi Kashiwazaki）</a></p>
+        <p>プラグイン: Kashiwazaki SEO Universal Sitemap v1.0.4</p>
+    </footer>
+</main>
+
+<div class="lightbox"></div>
+<script src="js/manual.js?v=1"></script>
+</body>
+</html>

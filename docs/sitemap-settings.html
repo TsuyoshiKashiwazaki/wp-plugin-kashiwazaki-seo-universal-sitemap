@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>詳細設定 - Kashiwazaki SEO Universal Sitemap マニュアル</title>
+    <link rel="stylesheet" href="css/style.css?v=1">
+</head>
+<body>
+<button class="hamburger-btn" aria-label="メニュー">&#9776;</button>
+
+<nav class="sidebar">
+    <div class="sidebar-header">
+        <h2 style="color:#fff;">Universal Sitemap</h2>
+        <span class="version">v1.0.4</span>
+        <img src="images/main-visual.png" alt="" style="width:100%;border-radius:4px;margin-top:8px;">
+    </div>
+    <ul>
+        <li><a href="index.html">概要</a></li>
+        <li><a href="setup.html">インストール・初期設定</a></li>
+        <li class="active"><a href="sitemap-settings.html">詳細設定</a></li>
+        <li><a href="troubleshooting.html">トラブルシューティング</a></li>
+    </ul>
+</nav>
+
+<main class="content">
+    <h1>詳細設定</h1>
+    <p class="lead">サイトマップ種別ごとの詳細設定、GZIP圧縮オプション、リライトルール、AJAX機能について解説します。</p>
+
+    <h2>投稿タイプ別サイトマップ</h2>
+
+    <p>投稿タイプ別サイトマップでは、各投稿タイプ（投稿、固定ページ、カスタム投稿タイプ）ごとに個別のサイトマップファイルを生成します。</p>
+
+    <figure class="screenshot">
+        <img src="images/screenshots/02-sitemap-detail.png" alt="サイトマップ設定" class="lightbox-trigger">
+        <figcaption>サイトマップの詳細設定</figcaption>
+    </figure>
+
+    <h3>対象投稿タイプの選択</h3>
+    <p>サイトマップに含める投稿タイプを設定画面から選択できます。公開状態（publish）の投稿のみがサイトマップに含まれます。</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:35%;">設定項目</th>
+                <th>説明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>投稿（post）</td>
+                <td>ブログ記事を含むサイトマップを生成します。デフォルトで有効です。</td>
+            </tr>
+            <tr>
+                <td>固定ページ（page）</td>
+                <td>固定ページを含むサイトマップを生成します。デフォルトで有効です。</td>
+            </tr>
+            <tr>
+                <td>カスタム投稿タイプ</td>
+                <td>登録されているカスタム投稿タイプが一覧表示されます。必要なものを選択してください。</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="callout callout-note">
+        <div class="callout-title">補足</div>
+        <p>非公開（private）や下書き（draft）の投稿はサイトマップに含まれません。noindex指定のある投稿タイプも自動的に除外されます。</p>
+    </div>
+
+    <h2>画像サイトマップ</h2>
+
+    <p>画像サイトマップは、投稿内に埋め込まれた画像の情報をXMLサイトマップとして出力します。Google画像検索でのインデックスを促進します。</p>
+
+    <h3>画像情報の収集</h3>
+    <p>プラグインは投稿コンテンツ内の <code>&lt;img&gt;</code> タグを解析し、以下の情報をサイトマップに含めます。</p>
+
+    <ul>
+        <li>画像URL（<code>image:loc</code>）</li>
+        <li>画像タイトル（<code>image:title</code>） - alt属性から取得</li>
+        <li>画像キャプション（<code>image:caption</code>） - キャプション情報がある場合</li>
+    </ul>
+
+    <h2>動画サイトマップ</h2>
+
+    <p>動画サイトマップは、投稿内の動画コンテンツのメタデータをXMLサイトマップとして出力します。Google動画検索での認識を強化します。</p>
+
+    <h3>対応動画形式</h3>
+    <p>プラグインは投稿コンテンツ内の動画埋め込みを自動検出し、動画サイトマップに含めます。YouTube、VimeoなどのoEmbed対応プラットフォームの埋め込みに対応しています。</p>
+
+    <h2>ニュースサイトマップ</h2>
+
+    <p>ニュースサイトマップは、Google News向けに直近のニュース記事を含むサイトマップを生成します。</p>
+
+    <div class="callout callout-warning">
+        <div class="callout-title">注意</div>
+        <p>ニュースサイトマップは直近48時間以内に公開された記事のみを対象とします。Google Newsに登録されているサイトでの使用を想定しています。</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:35%;">設定項目</th>
+                <th>説明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>サイト名</td>
+                <td>Google Newsに登録しているサイト名を設定します。</td>
+            </tr>
+            <tr>
+                <td>言語コード</td>
+                <td>ニュースの言語コード（例: ja）を設定します。</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>GZIP圧縮設定</h2>
+
+    <p>GZIP圧縮を有効にすると、サイトマップファイルを圧縮形式（.xml.gz）で配信できます。</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:35%;">項目</th>
+                <th>詳細</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>圧縮率</td>
+                <td>通常60〜80%のファイルサイズ削減が期待できます。</td>
+            </tr>
+            <tr>
+                <td>互換性</td>
+                <td>すべての主要な検索エンジン（Google、Bing）がGZIP圧縮サイトマップに対応しています。</td>
+            </tr>
+            <tr>
+                <td>必要条件</td>
+                <td>サーバーのPHP環境でzlib拡張が有効であること。</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>サイトマップインデックス</h2>
+
+    <p>サイト内のURLが50,000件を超える場合、プラグインは自動的にサイトマップインデックスファイルを生成し、各サイトマップファイルを50,000件ずつに分割します。</p>
+
+    <div class="step">
+        <span class="step-number">1</span>
+        <div class="step-body">
+            <p>プラグインが対象URL数をカウントし、50,000件を超えるか判定します。</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <span class="step-number">2</span>
+        <div class="step-body">
+            <p>50,000件を超える場合、サイトマップインデックスファイル（sitemap-index.xml）を生成します。</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <span class="step-number">3</span>
+        <div class="step-body">
+            <p>各分割サイトマップ（sitemap-post-1.xml、sitemap-post-2.xml 等）がインデックスファイルから参照されます。</p>
+        </div>
+    </div>
+
+    <h2>AJAX機能</h2>
+
+    <p>管理画面では、AJAXを利用してサイトマップの手動再生成をバックグラウンドで実行できます。大量のコンテンツがある場合でも、管理画面の操作がブロックされることなく処理が完了します。</p>
+
+    <div class="callout callout-tip">
+        <div class="callout-title">ヒント</div>
+        <p>サイトマップの生成状況は管理画面からリアルタイムで確認できます。生成完了後、各サイトマップのURL数とファイルサイズが表示されます。</p>
+    </div>
+
+    <h2>wp_head出力</h2>
+
+    <p>プラグインは <code>wp_head</code> アクションフックを利用して、HTMLの <code>&lt;head&gt;</code> セクションにサイトマップへのリンクを自動出力します。</p>
+
+    <pre><code>&lt;link rel="sitemap" type="application/xml" title="Sitemap" href="https://example.com/sitemap.xml" /&gt;</code></pre>
+
+    <div class="callout callout-note">
+        <div class="callout-title">補足</div>
+        <p>この出力により、検索エンジンがHTMLページからサイトマップを自動的に発見できるようになります。robots.txtへのサイトマップURL記載と併用することが推奨されます。</p>
+    </div>
+
+    <nav class="page-nav">
+        <a href="setup.html" class="prev">&laquo; インストール・初期設定</a>
+        <a href="troubleshooting.html" class="next">トラブルシューティング &raquo;</a>
+    </nav>
+
+    <footer class="manual-footer">
+        <p>作者: <a href="https://www.tsuyoshikashiwazaki.jp/profile/" target="_blank" rel="noopener">柏崎剛（Tsuyoshi Kashiwazaki）</a></p>
+        <p>プラグイン: Kashiwazaki SEO Universal Sitemap v1.0.4</p>
+    </footer>
+</main>
+
+<div class="lightbox"></div>
+<script src="js/manual.js?v=1"></script>
+</body>
+</html>
