@@ -1,10 +1,10 @@
 === Kashiwazaki SEO Universal Sitemap ===
 Contributors: tsuyoshikashiwazaki
 Tags: seo, sitemap, xml sitemap, google news, image sitemap, video sitemap
-Requires at least: 5.0
+Requires at least: 5.3
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -72,6 +72,21 @@ Kashiwazaki SEO Universal Sitemapは、WordPress向けの包括的なサイト�
 
 == Changelog ==
 
+= 1.0.5 =
+* Fixed: インデックスサイトマップの lastmod が +00:00 付きの誤った時刻（実際より未来）になる問題
+* Fixed: Googleニュースサイトマップに公開から2日を過ぎた記事が含まれる問題（2日以内の記事のみ掲載）
+* Fixed: 静的生成モードで、公開中の投稿を下書き・非公開・ゴミ箱・削除にしてもサイトマップに残る問題
+* Fixed: 動的生成モードでも投稿保存時に静的ファイルを生成し、保存1回で再生成が複数回走る問題
+* Fixed: 動的生成モードで 50,000件（ニュースは1,000件）ごとの分割が行われず全件を一度に読み込む問題
+* Fixed: 動的生成モードで名前が「-数字」で終わる投稿タイプのサイトマップが404になる問題
+* Fixed: Vimeo 動画に必須の video:thumbnail_loc が無い問題（サムネイルを取得できない動画は出力しない）
+* Fixed: パスワード保護された投稿の本文由来の画像・動画情報がサイトマップに出る問題
+* Fixed: 分割ファイルの削除時に、名前が前方一致する別の投稿タイプのサイトマップを削除する問題
+* Fixed: サイトマップの書き込み失敗時に投稿の保存がエラーになる・失敗が通知されない問題
+* Fixed: news:language に en-US 等の言語タグを出力する問題（ISO 639 形式に変換）
+* Changed: YouTube 動画のサムネイルを hqdefault.jpg、player_loc を埋め込み用 URL に変更
+* Changed: 静的生成モードでニュースサイトマップを WP-Cron により約1時間ごとに自動更新
+
 = 1.0.4 =
 * Added: 動的/静的生成モードの選択機能
 * Added: 動的モード - リクエスト時にDBから直接生成、ファイル不要
@@ -118,6 +133,9 @@ Kashiwazaki SEO Universal Sitemapは、WordPress向けの包括的なサイト�
 * 個別投稿でのサイトマップ含有制御機能
 
 == Upgrade Notice ==
+
+= 1.0.5 =
+サイトマップの更新日時、Googleニュースサイトマップの掲載期間、非公開・削除した投稿の反映など、複数の不具合を修正しました。
 
 = 1.0.2 =
 カスタム投稿タイプのサイトマップが正しくインデックスに反映されるようになりました。カスタム投稿タイプを使用している場合は必ずアップデートしてください。

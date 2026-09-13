@@ -111,9 +111,18 @@ class KSUS_Admin {
             wp_send_json_error(array('message' => '権限がありません。'));
         }
 
-        KSUS_Sitemap_Generator::get_instance()->generate_all_sitemaps();
+        if (!KSUS_Sitemap_Generator::get_instance()->generate_all_sitemaps()) {
+            wp_send_json_error(array('message' => self::get_write_failure_message()));
+        }
 
         wp_send_json_success(array('message' => 'サイトマップを再生成しました。'));
+    }
+
+    /**
+     * サイトマップファイルを書き込めなかったときのメッセージ
+     */
+    private static function get_write_failure_message() {
+        return 'サイトマップファイルの書き込みに失敗しました。/wp-content/uploads/sitemaps/ ディレクトリが書き込み可能か確認してください。';
     }
 
     /**
@@ -130,6 +139,12 @@ class KSUS_Admin {
         $sitemap_file_gz = $upload_dir['basedir'] . '/sitemaps/sitemap.xml.gz';
 
         if (!file_exists($sitemap_file) && !file_exists($sitemap_file_gz)) {
+            // 書き込めない環境で管理画面の表示のたびに全件生成を繰り返さないよう、試行は1時間に1回まで
+            if (get_transient('ksus_initial_generation_attempted')) {
+                return;
+            }
+            set_transient('ksus_initial_generation_attempted', 1, HOUR_IN_SECONDS);
+
             KSUS_Sitemap_Generator::get_instance()->generate_all_sitemaps();
         }
     }
@@ -632,15 +647,15 @@ class KSUS_Admin {
                 return;
             }
 
-            KSUS_Sitemap_Generator::get_instance()->generate_all_sitemaps();
+            $generated = KSUS_Sitemap_Generator::get_instance()->generate_all_sitemaps();
 
-            // 成功メッセージを追加（管理画面のみ）
+            // 結果メッセージを追加（管理画面のみ）
             if (function_exists('add_settings_error')) {
                 add_settings_error(
                     'ksus_messages',
                     'ksus_message',
-                    'サイトマップを再生成しました。',
-                    'updated'
+                    $generated ? 'サイトマップを再生成しました。' : self::get_write_failure_message(),
+                    $generated ? 'updated' : 'error'
                 );
             }
         }
@@ -668,14 +683,14 @@ class KSUS_Admin {
             }
         } else {
             // 静的モードに切り替え → サイトマップを生成
-            KSUS_Sitemap_Generator::get_instance()->generate_all_sitemaps();
+            $generated = KSUS_Sitemap_Generator::get_instance()->generate_all_sitemaps();
 
             if (function_exists('add_settings_error')) {
                 add_settings_error(
                     'ksus_messages',
                     'ksus_message',
-                    '静的生成モードに切り替えました。サイトマップを生成しました。',
-                    'updated'
+                    $generated ? '静的生成モードに切り替えました。サイトマップを生成しました。' : '静的生成モードに切り替えました。' . self::get_write_failure_message(),
+                    $generated ? 'updated' : 'error'
                 );
             }
         }

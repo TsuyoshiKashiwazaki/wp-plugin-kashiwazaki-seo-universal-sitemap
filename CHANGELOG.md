@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2026-09-13
+
+### Fixed
+- インデックスサイトマップの lastmod が、サイトのタイムゾーンの時刻に +00:00 を付けて出力され実際より未来の時刻になる問題を修正
+- Googleニュースサイトマップに公開から2日を過ぎた記事が含まれる問題を修正（Google仕様に合わせて2日以内の記事のみ掲載）
+- 静的生成モードで、公開中の投稿を下書き・非公開・ゴミ箱・完全削除にしてもサイトマップに残る問題を修正
+- 動的生成モードでも投稿保存時に静的ファイルを生成していた問題と、保存1回で再生成が複数回走る問題を修正（再生成はリクエストの最後に1回）
+- 動的生成モードで 50,000件（ニュースは1,000件）ごとの分割が行われず、全件を一度に読み込む問題を修正
+- 動的生成モードで名前が「-数字」で終わる投稿タイプのサイトマップが404になる問題を修正
+- Vimeo 動画に必須の video:thumbnail_loc が出力されない問題を修正（oEmbed でサムネイルを取得し、取得できない動画は出力しない）
+- パスワード保護された投稿の本文由来の画像・動画情報がサイトマップに出力される問題を修正
+- 分割ファイルの削除時に、名前が前方一致する別の投稿タイプのサイトマップを削除する問題を修正
+- サイトマップファイルの書き込み失敗時に投稿の保存がエラーになる問題、失敗が通知されない問題を修正（書き込みに失敗した場合は既存のファイルを残す）
+- news:language にサイトの言語タグ（en-US 等）をそのまま出力する問題を修正（ISO 639 形式に変換、中国語は zh-cn / zh-tw）
+
+### Changed
+- YouTube 動画のサムネイルを hqdefault.jpg に、player_loc を埋め込み用 URL に変更
+- 静的生成モードでは、ニュースサイトマップを WP-Cron により約1時間ごとに自動更新（プラグイン無効化時にイベントを解除）
+
 ## [1.0.4] - 2025-12-05
 
 ### Added
@@ -43,3 +62,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 配列未定義アクセスによるエラーを修正
 - debug.log設定の重複を解消
 - ニュースサイトマップが空の場合のファイル削除処理
+
+[1.0.5]: https://github.com/TsuyoshiKashiwazaki/wp-plugin-kashiwazaki-seo-universal-sitemap/releases/tag/v1.0.5-dev
+[1.0.4]: https://github.com/TsuyoshiKashiwazaki/wp-plugin-kashiwazaki-seo-universal-sitemap/releases/tag/v1.0.4

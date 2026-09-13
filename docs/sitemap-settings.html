@@ -12,7 +12,7 @@
 <nav class="sidebar">
     <div class="sidebar-header">
         <h2 style="color:#fff;">Universal Sitemap</h2>
-        <span class="version">v1.0.4</span>
+        <span class="version">v1.0.5</span>
         <img src="images/main-visual.png" alt="" style="width:100%;border-radius:4px;margin-top:8px;">
     </div>
     <ul>
@@ -86,6 +86,7 @@
 
     <h3>対応動画形式</h3>
     <p>プラグインは投稿コンテンツ内の動画埋め込みを自動検出し、動画サイトマップに含めます。YouTube、VimeoなどのoEmbed対応プラットフォームの埋め込みに対応しています。</p>
+    <p>Vimeo の動画は、Google の動画サイトマップで必須のサムネイルを Vimeo の oEmbed API から取得し、取得できた動画だけを出力します（取得結果はキャッシュされます）。パスワード保護された投稿では、本文由来の画像・動画情報は出力しません。</p>
 
     <h2>ニュースサイトマップ</h2>
 
@@ -93,7 +94,7 @@
 
     <div class="callout callout-warning">
         <div class="callout-title">注意</div>
-        <p>ニュースサイトマップは直近48時間以内に公開された記事のみを対象とします。Google Newsに登録されているサイトでの使用を想定しています。</p>
+        <p>ニュースサイトマップは直近48時間以内に公開された記事のみを対象とします。静的生成モードでは WP-Cron により約1時間ごとに自動で更新され、期間を過ぎた記事は外れます。Google Newsに登録されているサイトでの使用を想定しています。</p>
     </div>
 
     <table>
@@ -110,7 +111,7 @@
             </tr>
             <tr>
                 <td>言語コード</td>
-                <td>ニュースの言語コード（例: ja）を設定します。</td>
+                <td>ニュースの言語コード（例: ja）を設定します。サイトの言語設定から ISO 639 形式（中国語は zh-cn / zh-tw）に変換して出力されます。</td>
             </tr>
         </tbody>
     </table>
@@ -194,7 +195,7 @@
 
     <footer class="manual-footer">
         <p>作者: <a href="https://www.tsuyoshikashiwazaki.jp/profile/" target="_blank" rel="noopener">柏崎剛（Tsuyoshi Kashiwazaki）</a></p>
-        <p>プラグイン: Kashiwazaki SEO Universal Sitemap v1.0.4</p>
+        <p>プラグイン: Kashiwazaki SEO Universal Sitemap v1.0.5</p>
     </footer>
 </main>
 

@@ -106,12 +106,11 @@ class KSUS_Post_Meta {
         }
 
         // データの保存
+        // サイトマップの再生成は、投稿の保存に合わせて KSUS_Sitemap_Generator が
+        // リクエストの最後に1回だけ行う（動的生成モードでは行わない）
         if (isset($_POST['ksus_sitemap_type'])) {
             $sitemap_type = sanitize_text_field($_POST['ksus_sitemap_type']);
             update_post_meta($post_id, '_ksus_sitemap_type', $sitemap_type);
         }
-
-        // サイトマップを再生成
-        do_action('ksus_regenerate_sitemaps');
     }
 }

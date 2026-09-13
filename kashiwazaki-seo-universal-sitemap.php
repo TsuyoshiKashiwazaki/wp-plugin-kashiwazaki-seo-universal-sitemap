@@ -3,7 +3,7 @@
  * Plugin Name: Kashiwazaki SEO Universal Sitemap
  * Plugin URI: https://www.tsuyoshikashiwazaki.jp
  * Description: 柏崎剛によるユニバーサルSEOサイトマッププラグイン。投稿タイプ別のサイトマップ、画像・動画サイトマップ、Googleニュースサイトマップに対応。50,000件/1,000件で自動分割、GZIP圧縮対応。
- * Version: 1.0.4
+ * Version: 1.0.5
  * Author: 柏崎剛 (Tsuyoshi Kashiwazaki)
  * Author URI: https://www.tsuyoshikashiwazaki.jp
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // プラグイン定数
-define('KSUS_VERSION', '1.0.4');
+define('KSUS_VERSION', '1.0.5');
 define('KSUS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('KSUS_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -43,6 +43,9 @@ class KSUS_Main {
         // 有効化フック
         register_activation_hook(__FILE__, array($this, 'activate'));
 
+        // 無効化フック
+        register_deactivation_hook(__FILE__, array($this, 'deactivate'));
+
         // プラグイン初期化
         add_action('plugins_loaded', array($this, 'init'));
     }
@@ -62,6 +65,14 @@ class KSUS_Main {
         // リライトルールを追加
         KSUS_Sitemap_Generator::get_instance()->add_rewrite_rules();
         flush_rewrite_rules();
+    }
+
+    /**
+     * プラグイン無効化時の処理
+     */
+    public function deactivate() {
+        // ニュースサイトマップの定期再生成を解除
+        KSUS_Sitemap_Generator::clear_scheduled_events();
     }
 
     /**
